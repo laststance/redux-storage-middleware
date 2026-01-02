@@ -13,6 +13,11 @@
       "require": "./dist/index.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "packageManager": "pnpm@10.26.2",
   "lint-staged": {
     "*": "prettier --ignore-unknown --write"
@@ -44,7 +49,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/laststance/gitbox"
+    "url": "https://github.com/laststance/redux-strorage-middeware"
+  },
+  "homepage": "https://github.com/laststance/redux-strorage-middeware#readme",
+  "bugs": {
+    "url": "https://github.com/laststance/redux-strorage-middeware/issues"
   },
   "peerDependencies": {
     "@reduxjs/toolkit": "^2.0.0",
