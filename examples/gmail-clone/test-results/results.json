@@ -1,0 +1,998 @@
+{
+  "config": {
+    "configFile": "/Users/ryotamurakami/laststance/redux-strorage-middeware/examples/gmail-clone/playwright.config.ts",
+    "rootDir": "/Users/ryotamurakami/laststance/redux-strorage-middeware/examples/gmail-clone/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 8
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/ryotamurakami/laststance/redux-strorage-middeware/examples/gmail-clone/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/ryotamurakami/laststance/redux-strorage-middeware/examples/gmail-clone/tests/e2e",
+        "testIgnore": [],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 8,
+    "webServer": {
+      "command": "pnpm start",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "cross-service-persistence.spec.ts",
+      "file": "cross-service-persistence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Cross-Service localStorage Persistence",
+          "file": "cross-service-persistence.spec.ts",
+          "line": 58,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display app launcher when clicking grid icon",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 929,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:19.940Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac54e2c1d2cbd0b9fd7-71eeb6c8925199751ce2",
+              "file": "cross-service-persistence.spec.ts",
+              "line": 66,
+              "column": 7
+            },
+            {
+              "title": "should persist emails when navigating to Translate and back",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1837,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:19.937Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac54e2c1d2cbd0b9fd7-f5c1b8934f531f895f6d",
+              "file": "cross-service-persistence.spec.ts",
+              "line": 92,
+              "column": 7
+            },
+            {
+              "title": "should persist 1000 emails across multiple service navigations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2852,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:19.938Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac54e2c1d2cbd0b9fd7-53b0fff50c8f33c3986c",
+              "file": "cross-service-persistence.spec.ts",
+              "line": 132,
+              "column": 7
+            },
+            {
+              "title": "should persist state across browser context recreation (simulated browser restart)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3477,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:19.943Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac54e2c1d2cbd0b9fd7-4e273e8eee0d3aa8e336",
+              "file": "cross-service-persistence.spec.ts",
+              "line": 167,
+              "column": 7
+            },
+            {
+              "title": "should show correct count on service pages after email operations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2712,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:19.941Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac54e2c1d2cbd0b9fd7-82228b8fde17f20f6d03",
+              "file": "cross-service-persistence.spec.ts",
+              "line": 230,
+              "column": 7
+            },
+            {
+              "title": "should handle clear all operation and reflect on service pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2400,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:19.945Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac54e2c1d2cbd0b9fd7-857ad623ccc608e4b808",
+              "file": "cross-service-persistence.spec.ts",
+              "line": 267,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Service Page UI Tests",
+          "file": "cross-service-persistence.spec.ts",
+          "line": 303,
+          "column": 6,
+          "specs": [
+            {
+              "title": "all service pages should be accessible and display correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 6838,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:19.937Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac54e2c1d2cbd0b9fd7-1160ebd78cb23d09b564",
+              "file": "cross-service-persistence.spec.ts",
+              "line": 315,
+              "column": 7
+            },
+            {
+              "title": "service pages should have working app launcher",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2066,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:19.942Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac54e2c1d2cbd0b9fd7-b373e7a5ae83ba0b48af",
+              "file": "cross-service-persistence.spec.ts",
+              "line": 358,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Performance Tests - Cross Service Navigation",
+          "file": "cross-service-persistence.spec.ts",
+          "line": 384,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should navigate between services quickly with 1000+ emails",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2572,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n[Performance] Cross-service navigation with 1000 emails:\n  Average navigation time: 318.50ms\n  Individual times: 327ms, 315ms, 317ms, 315ms\n    \n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:21.100Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac54e2c1d2cbd0b9fd7-de59b217c4bef3ba2b38",
+              "file": "cross-service-persistence.spec.ts",
+              "line": 385,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "gmail-clone.spec.ts",
+      "file": "gmail-clone.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Gmail Clone - Basic Functionality",
+          "file": "gmail-clone.spec.ts",
+          "line": 62,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display Gmail Clone header",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 686,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:22.001Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-01008a5a77ba24c49e1c",
+              "file": "gmail-clone.spec.ts",
+              "line": 70,
+              "column": 7
+            },
+            {
+              "title": "should display email generation buttons",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 677,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:22.241Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-47af550d63ea7b63636d",
+              "file": "gmail-clone.spec.ts",
+              "line": 74,
+              "column": 7
+            },
+            {
+              "title": "should generate 100 emails and persist to localStorage",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 1241,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:22.553Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-f4d2985b97576d86d5c6",
+              "file": "gmail-clone.spec.ts",
+              "line": 80,
+              "column": 7
+            },
+            {
+              "title": "should clear all emails when Clear All is clicked",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1727,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:22.693Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-5d7f1497b9b87d534c3b",
+              "file": "gmail-clone.spec.ts",
+              "line": 105,
+              "column": 7
+            },
+            {
+              "title": "should persist emails after page reload",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 1763,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:22.883Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-29f5fa96905d764314a8",
+              "file": "gmail-clone.spec.ts",
+              "line": 125,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Gmail Clone - 1000+ Email Load Testing",
+          "file": "gmail-clone.spec.ts",
+          "line": 143,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should handle 1000 emails with acceptable performance",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 1349,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[Performance] 1000 emails:\n      - Generation time: 676ms\n      - Storage size: 502.67KB\n    \n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:22.924Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-bf9b43e6612a8f22a22d",
+              "file": "gmail-clone.spec.ts",
+              "line": 151,
+              "column": 7
+            },
+            {
+              "title": "should persist 1000 emails after reload with fast hydration",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 1918,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[Performance] 1000 email hydration time: 567ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:23.025Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-c1dec3734e2aa4ce89db",
+              "file": "gmail-clone.spec.ts",
+              "line": 182,
+              "column": 7
+            },
+            {
+              "title": "should handle sequential email loads with persistence",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 1386,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:23.638Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-de1c445a9b9d14f05554",
+              "file": "gmail-clone.spec.ts",
+              "line": 206,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Gmail Clone - Performance Metrics",
+          "file": "gmail-clone.spec.ts",
+          "line": 227,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should collect performance metrics for 5000 emails",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3537,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n╔══════════════════════════════════════════════════╗\n║     Gmail Clone Performance Report - 5000 Emails ║\n╠══════════════════════════════════════════════════╣\n║ Generation Time:    2184  ms                  ║\n║ Storage Size:       2.46  MB                  ║\n║ Hydration Time:     660   ms                  ║\n║ Emails per KB:      1.99                       ║\n╚══════════════════════════════════════════════════╝\n    \n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:23.679Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-f2a228eaec9cb97bfd51",
+              "file": "gmail-clone.spec.ts",
+              "line": 235,
+              "column": 7
+            },
+            {
+              "title": "should demonstrate debounce optimization",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 1361,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[Debounce Test] 5 rapid clicks completed in 694ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:23.799Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-ec9c3f15274b763af8f6",
+              "file": "gmail-clone.spec.ts",
+              "line": 284,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Gmail Clone - Browser Close/Reopen Persistence",
+          "file": "gmail-clone.spec.ts",
+          "line": 310,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should persist state after browser close and reopen",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 1853,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:24.278Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-ff5e61cd1c946269cf32",
+              "file": "gmail-clone.spec.ts",
+              "line": 320,
+              "column": 7
+            },
+            {
+              "title": "should restore complex state after browser restart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2224,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[Browser Restart] 1000 emails restored in 568ms after browser restart\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:24.425Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-57cc7b3cad59266339f6",
+              "file": "gmail-clone.spec.ts",
+              "line": 415,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Gmail Clone - UI Interactions",
+          "file": "gmail-clone.spec.ts",
+          "line": 502,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display stats bar with correct counts",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 1716,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:24.651Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-64a74970d18134cb7acf",
+              "file": "gmail-clone.spec.ts",
+              "line": 514,
+              "column": 7
+            },
+            {
+              "title": "should search emails",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2005,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:24.948Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-c4dd724a84cf8832eebc",
+              "file": "gmail-clone.spec.ts",
+              "line": 521,
+              "column": 7
+            },
+            {
+              "title": "should display hydration status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 1724,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-02T13:59:25.029Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "827b0f012e130e7f74e1-fbdd65d931f51fea2d7c",
+              "file": "gmail-clone.spec.ts",
+              "line": 533,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-01-02T13:59:18.995Z",
+    "duration": 8248.453,
+    "expected": 24,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
