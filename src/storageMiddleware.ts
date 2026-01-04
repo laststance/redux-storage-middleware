@@ -13,18 +13,18 @@ import type {
   Reducer,
 } from '@reduxjs/toolkit'
 
-import { defaultJsonSerializer } from './serializers/json'
-import { createSafeLocalStorage } from './storage'
+import { defaultJsonSerializer } from './serializers/json.js'
+import { createSafeLocalStorage } from './storage.js'
 import type {
   StorageMiddlewareConfig,
   StorageMiddlewareResult,
   HydrationApi,
   HydrationState,
   PersistedState,
-} from './types'
-import { debounce } from './utils/debounce'
-import { isServer, isStorageAvailable } from './utils/isServer'
-import { throttle, scheduleIdleCallback } from './utils/throttle'
+} from './types.js'
+import { debounce } from './utils/debounce.js'
+import { isServer, isStorageAvailable } from './utils/isServer.js'
+import { throttle, scheduleIdleCallback } from './utils/throttle.js'
 
 // =============================================================================
 // Constants

@@ -4,7 +4,7 @@
  * Serializer using standard JSON.stringify/parse
  */
 
-import type { Serializer, JsonSerializerOptions } from '../types'
+import type { Serializer, JsonSerializerOptions } from '../types.js'
 
 /**
  * Set of dangerous keys to prevent prototype pollution attacks
