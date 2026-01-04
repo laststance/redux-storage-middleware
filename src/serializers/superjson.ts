@@ -8,8 +8,8 @@
  * pnpm add superjson
  */
 
-import type { Serializer } from '../types'
-import { createModuleLoader } from '../utils/moduleLoader'
+import type { Serializer } from '../types.js'
+import { createModuleLoader } from '../utils/moduleLoader.js'
 
 /**
  * SuperJSON interface (for dynamic import)

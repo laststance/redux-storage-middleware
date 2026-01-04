@@ -13,6 +13,7 @@ export default defineConfig([
       'benchmarks/**',
       'eslint.config.js',
       'vitest.config.ts',
+      'tsup.config.ts',
     ],
   },
   ...tsPrefixer,

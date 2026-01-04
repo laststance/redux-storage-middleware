@@ -45,7 +45,7 @@ export {
   ACTION_HYDRATE_START,
   ACTION_HYDRATE_COMPLETE,
   ACTION_HYDRATE_ERROR,
-} from './storageMiddleware'
+} from './storageMiddleware.js'
 
 // =============================================================================
 // Storage
@@ -60,7 +60,7 @@ export {
   isValidStorage,
   getStorageSize,
   getRemainingStorageQuota,
-} from './storage'
+} from './storage.js'
 
 // =============================================================================
 // Serializers
@@ -83,7 +83,7 @@ export {
   getCompressionRatio,
   type CompressionFormat,
   type CompressedSerializerOptions,
-} from './serializers'
+} from './serializers/index.js'
 
 // =============================================================================
 // Utilities
@@ -98,7 +98,7 @@ export {
   debounceLeading,
   throttle,
   scheduleIdleCallback,
-} from './utils'
+} from './utils/index.js'
 
 // =============================================================================
 // Types
@@ -129,4 +129,4 @@ export type {
   // Utility Types
   NestedKeyOf,
   PathValue,
-} from './types'
+} from './types.js'

@@ -9,8 +9,8 @@ export {
   isBrowser,
   isStorageAvailable,
   isSessionStorageAvailable,
-} from './isServer'
+} from './isServer.js'
 
-export { debounce, debounceLeading } from './debounce'
+export { debounce, debounceLeading } from './debounce.js'
 
-export { throttle, scheduleIdleCallback } from './throttle'
+export { throttle, scheduleIdleCallback } from './throttle.js'

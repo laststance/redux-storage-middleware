@@ -12,13 +12,13 @@ export {
   dateReviver,
   collectionReplacer,
   collectionReviver,
-} from './json'
+} from './json.js'
 
 export {
   createSuperJsonSerializer,
   initSuperJsonSerializer,
   isSuperJsonLoaded,
-} from './superjson'
+} from './superjson.js'
 
 export {
   createCompressedSerializer,
@@ -27,4 +27,4 @@ export {
   getCompressionRatio,
   type CompressionFormat,
   type CompressedSerializerOptions,
-} from './compressed'
+} from './compressed.js'

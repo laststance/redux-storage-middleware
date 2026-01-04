@@ -5,8 +5,11 @@
  * Prevents crashes in SSR environments and supports custom storage backends
  */
 
-import type { StateStorage, SyncStorage, AsyncStorage } from './types'
-import { isStorageAvailable, isSessionStorageAvailable } from './utils/isServer'
+import type { StateStorage, SyncStorage, AsyncStorage } from './types.js'
+import {
+  isStorageAvailable,
+  isSessionStorageAvailable,
+} from './utils/isServer.js'
 
 // =============================================================================
 // Constants
