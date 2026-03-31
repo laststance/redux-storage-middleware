@@ -31,7 +31,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky",
-    "prettier": "prettier --ignore-unknown --write ."
+    "prettier": "prettier --ignore-unknown --write .",
+    "push-release-commit": "push-release-commit"
   },
   "keywords": [
     "redux",
@@ -62,6 +63,7 @@
     "superjson": "^2.0.0"
   },
   "devDependencies": {
+    "@laststance/npm-publish-tool": "^2.1.0",
     "@vitest/browser-playwright": "^4.0.16",
     "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^9.39.2",
@@ -70,8 +72,12 @@
     "lint-staged": "^16.2.7",
     "playwright": "^1.57.0",
     "prettier": "^3.7.4",
+    "release-it": "^19.2.4",
     "tsup": "^8.5.1",
     "typescript": "^5.3.0",
     "vitest": "^4.0.16"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
