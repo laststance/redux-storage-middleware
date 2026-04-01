@@ -678,6 +678,95 @@ describe('Custom Storage', () => {
   })
 })
 
+describe('Custom Serializer', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('uses custom serializer for save and load', async () => {
+    // Custom serializer that wraps JSON with a prefix
+    const PREFIX = 'CUSTOM:'
+    const customSerializer = {
+      serialize: (state: unknown): string => PREFIX + JSON.stringify(state),
+      deserialize: (str: string): unknown =>
+        JSON.parse(str.slice(PREFIX.length)),
+    }
+
+    const rootReducer = combineReducers({
+      test: testSlice.reducer,
+    })
+
+    const { middleware, reducer } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-serializer',
+      serializer: customSerializer,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    store.dispatch(increment())
+    await vi.advanceTimersByTimeAsync(100)
+
+    // Verify data is stored with custom prefix
+    const raw = localStorage.getItem('test-serializer')
+    expect(raw).toBeTruthy()
+    expect(raw!.startsWith(PREFIX)).toBe(true)
+  })
+
+  it('hydrates from custom-serialized data', async () => {
+    const PREFIX = 'CUSTOM:'
+    const customSerializer = {
+      serialize: (state: unknown): string => PREFIX + JSON.stringify(state),
+      deserialize: (str: string): unknown =>
+        JSON.parse(str.slice(PREFIX.length)),
+    }
+
+    // Pre-populate with custom-serialized data
+    const persistedState = {
+      version: 0,
+      state: { test: { value: 88, name: 'custom' } },
+    }
+    localStorage.setItem(
+      'test-serializer-hydrate',
+      PREFIX + JSON.stringify(persistedState),
+    )
+
+    const rootReducer = combineReducers({
+      test: testSlice.reducer,
+    })
+
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-serializer-hydrate',
+      serializer: customSerializer,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    expect(store.getState().test).toEqual({ value: 88, name: 'custom' })
+  })
+})
+
 describe('loadStateFromStorage', () => {
   beforeEach(() => {
     localStorage.clear()

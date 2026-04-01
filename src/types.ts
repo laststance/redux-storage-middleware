@@ -222,6 +222,19 @@ export interface StorageMiddlewareConfig<S = unknown> {
   storage?: SyncStorage
 
   // ---------------------------------------------------------------------------
+  // Serialization
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Custom serializer for state persistence
+   * Defaults to JSON.stringify/JSON.parse
+   *
+   * @example createSuperJsonSerializer() // Supports Date, Map, Set, etc.
+   * @example createCompressedSerializer() // Compressed with lz-string
+   */
+  serializer?: Serializer
+
+  // ---------------------------------------------------------------------------
   // Merge Strategy
   // ---------------------------------------------------------------------------
 

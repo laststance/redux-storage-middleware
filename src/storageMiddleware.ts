@@ -197,6 +197,7 @@ export function createStorageMiddleware<
     key,
     slices,
     storage: customStorage,
+    serializer: customSerializer,
     merge,
     performance: perfConfig,
     onHydrationComplete,
@@ -206,6 +207,9 @@ export function createStorageMiddleware<
 
   // Resolve merge strategy (default: shallow merge)
   const mergeFn = merge ?? shallowMerge
+
+  // Resolve serializer (default: JSON)
+  const serializer = customSerializer ?? defaultJsonSerializer
 
   // Validate rootReducer is required
   if (!rootReducer || typeof rootReducer !== 'function') {
@@ -284,7 +288,7 @@ export function createStorageMiddleware<
         state: stateToSave,
       }
 
-      const serialized = defaultJsonSerializer.serialize(persistedState)
+      const serialized = serializer.serialize(persistedState)
       storage.setItem(key, serialized)
 
       onSaveComplete?.(state)
@@ -309,9 +313,7 @@ export function createStorageMiddleware<
         return null
       }
 
-      return defaultJsonSerializer.deserialize(serialized) as PersistedState<
-        Partial<S>
-      >
+      return serializer.deserialize(serialized) as PersistedState<Partial<S>>
     } catch (error) {
       console.error('[redux-storage-middleware] Failed to load state:', error)
       onError?.(error as Error, 'load')
