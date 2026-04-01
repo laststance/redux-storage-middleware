@@ -237,8 +237,8 @@ export function createStorageMiddleware<
   // Storage Setup
   // ---------------------------------------------------------------------------
 
-  // Get SSR-safe storage (always localStorage)
-  const getStorage = () => createSafeLocalStorage()
+  // Get SSR-safe storage (always localStorage, created once)
+  const storage = createSafeLocalStorage()
 
   // ---------------------------------------------------------------------------
   // Serialization
@@ -272,7 +272,6 @@ export function createStorageMiddleware<
     }
 
     try {
-      const storage = getStorage()
       const stateToSave = extractStateToSave(state)
 
       const persistedState: PersistedState<Partial<S>> = {
@@ -299,7 +298,6 @@ export function createStorageMiddleware<
     }
 
     try {
-      const storage = getStorage()
       const serialized = storage.getItem(key)
 
       if (serialized === null) {
@@ -413,7 +411,6 @@ export function createStorageMiddleware<
       }
 
       try {
-        const storage = getStorage()
         storage.removeItem(key)
       } catch (error) {
         console.error(
