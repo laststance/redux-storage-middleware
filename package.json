@@ -1,6 +1,6 @@
 {
   "name": "@laststance/redux-storage-middleware",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "type": "module",
   "description": "SSR-safe Redux middleware for LocalStorage persistence with hydration control",
   "main": "./dist/index.cjs",
@@ -48,11 +48,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/laststance/redux-strorage-middeware"
+    "url": "https://github.com/laststance/redux-storage-middleware"
   },
-  "homepage": "https://github.com/laststance/redux-strorage-middeware#readme",
+  "homepage": "https://github.com/laststance/redux-storage-middleware#readme",
   "bugs": {
-    "url": "https://github.com/laststance/redux-strorage-middeware/issues"
+    "url": "https://github.com/laststance/redux-storage-middleware/issues"
   },
   "peerDependencies": {
     "@reduxjs/toolkit": "^2.0.0",
