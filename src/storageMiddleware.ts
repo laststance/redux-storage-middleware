@@ -196,6 +196,7 @@ export function createStorageMiddleware<
     rootReducer,
     key,
     slices,
+    storage: customStorage,
     merge,
     performance: perfConfig,
     onHydrationComplete,
@@ -241,8 +242,8 @@ export function createStorageMiddleware<
   // Storage Setup
   // ---------------------------------------------------------------------------
 
-  // Get SSR-safe storage (always localStorage, created once)
-  const storage = createSafeLocalStorage()
+  // Get SSR-safe storage (custom or localStorage, created once)
+  const storage = customStorage ?? createSafeLocalStorage()
 
   // ---------------------------------------------------------------------------
   // Serialization

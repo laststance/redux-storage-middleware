@@ -14,13 +14,13 @@ import type { PayloadAction } from '@reduxjs/toolkit'
 import { combineReducers, configureStore, createSlice } from '@reduxjs/toolkit'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
-// Note: createMemoryStorage import removed - no longer used after YAGNI cleanup
 import {
   createStorageMiddleware,
   loadStateFromStorage,
   clearStorageState,
   deepMerge,
 } from '../src/storageMiddleware'
+import { createMemoryStorage } from '../src/storage'
 import type { PersistedState } from '../src/types'
 
 // Test Redux slice
@@ -573,6 +573,108 @@ describe('Merge Strategy', () => {
     // Custom merge: value from persisted, name from current (initial)
     expect(store.getState().test.value).toBe(50)
     expect(store.getState().test.name).toBe('initial')
+  })
+})
+
+describe('Custom Storage', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('uses custom storage instead of localStorage', async () => {
+    const memStorage = createMemoryStorage()
+
+    const rootReducer = combineReducers({
+      test: testSlice.reducer,
+    })
+
+    const { middleware, reducer } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-custom-storage',
+      storage: memStorage,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    store.dispatch(increment())
+    await vi.advanceTimersByTimeAsync(100)
+
+    // Data should be in memoryStorage, not localStorage
+    expect(memStorage.getItem('test-custom-storage')).toBeTruthy()
+    expect(localStorage.getItem('test-custom-storage')).toBeNull()
+  })
+
+  it('hydrates from custom storage', async () => {
+    const memStorage = createMemoryStorage()
+    const persistedState = {
+      version: 0,
+      state: { test: { value: 77, name: 'from-memory' } },
+    }
+    memStorage.setItem('test-hydrate-custom', JSON.stringify(persistedState))
+
+    const rootReducer = combineReducers({
+      test: testSlice.reducer,
+    })
+
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-hydrate-custom',
+      storage: memStorage,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    expect(store.getState().test).toEqual({ value: 77, name: 'from-memory' })
+  })
+
+  it('clears custom storage via api.clearStorage()', async () => {
+    const memStorage = createMemoryStorage()
+    memStorage.setItem(
+      'test-clear-custom',
+      JSON.stringify({ version: 0, state: {} }),
+    )
+
+    const rootReducer = combineReducers({
+      test: testSlice.reducer,
+    })
+
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-clear-custom',
+      storage: memStorage,
+      performance: { debounceMs: 100 },
+    })
+
+    configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    api.clearStorage()
+    expect(memStorage.getItem('test-clear-custom')).toBeNull()
   })
 })
 

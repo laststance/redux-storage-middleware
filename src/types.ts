@@ -209,6 +209,19 @@ export interface StorageMiddlewareConfig<S = unknown> {
   slices?: (keyof S & string)[]
 
   // ---------------------------------------------------------------------------
+  // Storage
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Custom storage backend
+   * Defaults to localStorage (SSR-safe)
+   *
+   * @example createSafeSessionStorage() // Use sessionStorage instead
+   * @example createMemoryStorage() // Use in-memory storage for testing
+   */
+  storage?: SyncStorage
+
+  // ---------------------------------------------------------------------------
   // Merge Strategy
   // ---------------------------------------------------------------------------
 
