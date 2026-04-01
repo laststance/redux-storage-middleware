@@ -19,6 +19,7 @@ import {
   createStorageMiddleware,
   loadStateFromStorage,
   clearStorageState,
+  deepMerge,
 } from '../src/storageMiddleware'
 import type { PersistedState } from '../src/types'
 
@@ -439,6 +440,140 @@ describe('Hydration API', () => {
     api.onFinishHydration(callback)
 
     expect(callback).toHaveBeenCalled()
+  })
+})
+
+describe('Merge Strategy', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('uses shallowMerge by default', async () => {
+    const persistedState = {
+      version: 0,
+      state: { test: { value: 99, name: 'persisted' } },
+    }
+    localStorage.setItem('test-merge-default', JSON.stringify(persistedState))
+
+    const rootReducer = combineReducers({
+      test: testSlice.reducer,
+      settings: settingsSlice.reducer,
+    })
+
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-merge-default',
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    // shallowMerge: persisted test slice overwrites current entirely
+    expect(store.getState().test).toEqual({ value: 99, name: 'persisted' })
+    // settings was not persisted, so it stays at initial
+    expect(store.getState().settings).toEqual({
+      theme: 'light',
+      language: 'en',
+    })
+  })
+
+  it('uses deepMerge when provided', async () => {
+    const persistedState = {
+      version: 0,
+      state: { test: { value: 42 } },
+    }
+    localStorage.setItem('test-merge-deep', JSON.stringify(persistedState))
+
+    const rootReducer = combineReducers({
+      test: testSlice.reducer,
+      settings: settingsSlice.reducer,
+    })
+
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-merge-deep',
+      merge: deepMerge,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    // deepMerge: persisted value is merged deeply, name comes from initial state
+    expect(store.getState().test).toEqual({ value: 42, name: 'initial' })
+  })
+
+  it('uses custom merge function when provided', async () => {
+    const persistedState = {
+      version: 0,
+      state: { test: { value: 50, name: 'saved' } },
+    }
+    localStorage.setItem('test-merge-custom', JSON.stringify(persistedState))
+
+    const rootReducer = combineReducers({
+      test: testSlice.reducer,
+      settings: settingsSlice.reducer,
+    })
+
+    // Custom merge: take persisted state but always keep current name
+    const customMerge = <T extends object>(
+      persisted: Partial<T>,
+      current: T,
+    ): T => {
+      const merged = { ...current, ...persisted }
+      const currentAny = current as Record<string, unknown>
+      const mergedAny = merged as Record<string, unknown>
+      if (
+        typeof currentAny.test === 'object' &&
+        currentAny.test !== null &&
+        typeof mergedAny.test === 'object' &&
+        mergedAny.test !== null
+      ) {
+        mergedAny.test = {
+          ...(mergedAny.test as object),
+          name: (currentAny.test as { name: string }).name,
+        }
+      }
+      return merged as T
+    }
+
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-merge-custom',
+      merge: customMerge,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    // Custom merge: value from persisted, name from current (initial)
+    expect(store.getState().test.value).toBe(50)
+    expect(store.getState().test.name).toBe('initial')
   })
 })
 

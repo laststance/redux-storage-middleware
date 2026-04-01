@@ -209,6 +209,22 @@ export interface StorageMiddlewareConfig<S = unknown> {
   slices?: (keyof S & string)[]
 
   // ---------------------------------------------------------------------------
+  // Merge Strategy
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Custom merge function for combining persisted state with current state
+   * Defaults to shallow merge ({ ...currentState, ...persistedState })
+   *
+   * @param persistedState - The state loaded from storage
+   * @param currentState - The current Redux state
+   * @returns The merged state
+   * @example deepMerge // Use the exported deepMerge for nested state
+   * @example (persisted, current) => ({ ...current, ...persisted, count: current.count })
+   */
+  merge?: (persistedState: Partial<S>, currentState: S) => S
+
+  // ---------------------------------------------------------------------------
   // Performance
   // ---------------------------------------------------------------------------
 

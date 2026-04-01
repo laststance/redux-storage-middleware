@@ -196,11 +196,15 @@ export function createStorageMiddleware<
     rootReducer,
     key,
     slices,
+    merge,
     performance: perfConfig,
     onHydrationComplete,
     onSaveComplete,
     onError,
   } = config
+
+  // Resolve merge strategy (default: shallow merge)
+  const mergeFn = merge ?? shallowMerge
 
   // Validate rootReducer is required
   if (!rootReducer || typeof rootReducer !== 'function') {
@@ -365,10 +369,10 @@ export function createStorageMiddleware<
 
         const state = persisted.state as S
 
-        // Merge with current state using shallow merge
+        // Merge with current state using configured merge strategy
         if (storeApi) {
           const currentState = storeApi.getState()
-          hydratedState = shallowMerge(state as Partial<S>, currentState)
+          hydratedState = mergeFn(state as Partial<S>, currentState)
 
           // Update store (dispatch hydration action)
           storeApi.dispatch({
