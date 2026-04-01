@@ -2,7 +2,7 @@
  * @laststance/redux-storage-middleware
  *
  * SSR-safe Redux Toolkit middleware for localStorage persistence
- * Automatic hydration and selective slice persistence
+ * Automatic hydration, version migration, and selective slice persistence
  *
  * @example
  * ```ts

@@ -35,7 +35,6 @@ const ACTION_HYDRATE_COMPLETE = '@@redux-storage-middleware/HYDRATE_COMPLETE'
 const ACTION_HYDRATE_ERROR = '@@redux-storage-middleware/HYDRATE_ERROR'
 
 const DEFAULT_DEBOUNCE_MS = 300
-const INTERNAL_VERSION = 0 // Reserved for future migration support
 
 /**
  * Minimum and maximum length for storage keys
@@ -173,6 +172,13 @@ function deepMerge<T extends object>(
  *   rootReducer,  // Required: pass your root reducer
  *   key: 'my-app-state',
  *   slices: ['settings'],
+ *   version: 1,
+ *   migrate: (state, oldVersion) => {
+ *     if (oldVersion < 1) {
+ *       state.settings = { ...state.settings, newField: 'default' }
+ *     }
+ *     return state
+ *   },
  * })
  *
  * const store = configureStore({
@@ -198,6 +204,8 @@ export function createStorageMiddleware<
     slices,
     storage: customStorage,
     serializer: customSerializer,
+    version: configVersion = 0,
+    migrate,
     merge,
     performance: perfConfig,
     onHydrationComplete,
@@ -284,7 +292,7 @@ export function createStorageMiddleware<
       const stateToSave = extractStateToSave(state)
 
       const persistedState: PersistedState<Partial<S>> = {
-        version: INTERNAL_VERSION,
+        version: configVersion,
         state: stateToSave,
       }
 
@@ -370,7 +378,44 @@ export function createStorageMiddleware<
           return
         }
 
-        const state = persisted.state as S
+        // Version check
+        const storedVersion = persisted.version ?? 0
+        let state = persisted.state as Partial<S>
+
+        if (storedVersion !== configVersion) {
+          if (migrate) {
+            try {
+              state = migrate(state, storedVersion)
+              // Save migrated state so next load skips migration
+              const migratedPersisted: PersistedState<Partial<S>> = {
+                version: configVersion,
+                state,
+              }
+              const serialized = serializer.serialize(migratedPersisted)
+              storage.setItem(key, serialized)
+            } catch (error) {
+              console.error(
+                '[redux-storage-middleware] Migration failed:',
+                error,
+              )
+              onError?.(error as Error, 'load')
+              storage.removeItem(key)
+              hydrationState = 'hydrated'
+              hydratedState = null
+              return
+            }
+          } else {
+            // No migrate function — clear storage (safe default)
+            console.warn(
+              `[redux-storage-middleware] Version mismatch (stored: ${storedVersion}, config: ${configVersion}). ` +
+                'No migrate function provided. Clearing storage.',
+            )
+            storage.removeItem(key)
+            hydrationState = 'hydrated'
+            hydratedState = null
+            return
+          }
+        }
 
         // Merge with current state using configured merge strategy
         if (storeApi) {
@@ -383,7 +428,7 @@ export function createStorageMiddleware<
             payload: hydratedState,
           } as UnknownAction)
         } else {
-          hydratedState = state
+          hydratedState = state as S
         }
 
         hydrationState = 'hydrated'

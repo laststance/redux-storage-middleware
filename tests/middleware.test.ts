@@ -767,6 +767,259 @@ describe('Custom Serializer', () => {
   })
 })
 
+describe('Version Management', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('hydrates normally when versions match', async () => {
+    const persistedState = {
+      version: 1,
+      state: { test: { value: 10, name: 'versioned' } },
+    }
+    localStorage.setItem('test-version-match', JSON.stringify(persistedState))
+
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-version-match',
+      version: 1,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    expect(store.getState().test).toEqual({ value: 10, name: 'versioned' })
+  })
+
+  it('runs migrate on version mismatch', async () => {
+    const persistedState = {
+      version: 0,
+      state: { test: { value: 5, name: 'old' } },
+    }
+    localStorage.setItem('test-version-migrate', JSON.stringify(persistedState))
+
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-version-migrate',
+      version: 1,
+      migrate: (state, oldVersion) => {
+        if (oldVersion < 1) {
+          return {
+            ...state,
+            test: {
+              ...(state as { test: { value: number; name: string } }).test,
+              name: 'migrated',
+            },
+          }
+        }
+        return state
+      },
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    expect(store.getState().test).toEqual({ value: 5, name: 'migrated' })
+
+    // Verify migrated state was saved back with new version
+    const saved = JSON.parse(localStorage.getItem('test-version-migrate')!)
+    expect(saved.version).toBe(1)
+    expect(saved.state.test.name).toBe('migrated')
+  })
+
+  it('clears storage on version mismatch without migrate', async () => {
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {})
+
+    const persistedState = {
+      version: 0,
+      state: { test: { value: 99, name: 'stale' } },
+    }
+    localStorage.setItem(
+      'test-version-no-migrate',
+      JSON.stringify(persistedState),
+    )
+
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-version-no-migrate',
+      version: 1,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    // Should use initial state, not persisted
+    expect(store.getState().test).toEqual({ value: 0, name: 'initial' })
+    // Storage should be cleared
+    expect(localStorage.getItem('test-version-no-migrate')).toBeNull()
+    expect(consoleWarnSpy).toHaveBeenCalled()
+
+    consoleWarnSpy.mockRestore()
+  })
+
+  it('clears storage and calls onError when migrate throws', async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {})
+    const onError = vi.fn()
+
+    const persistedState = {
+      version: 0,
+      state: { test: { value: 1, name: 'broken' } },
+    }
+    localStorage.setItem(
+      'test-version-migrate-error',
+      JSON.stringify(persistedState),
+    )
+
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-version-migrate-error',
+      version: 1,
+      migrate: () => {
+        throw new Error('Migration failed')
+      },
+      onError,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    expect(store.getState().test).toEqual({ value: 0, name: 'initial' })
+    expect(localStorage.getItem('test-version-migrate-error')).toBeNull()
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Migration failed' }),
+      'load',
+    )
+
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('treats legacy data without version as version 0', async () => {
+    // Legacy data might not have a version field
+    const legacyData = {
+      state: { test: { value: 3, name: 'legacy' } },
+    }
+    localStorage.setItem('test-version-legacy', JSON.stringify(legacyData))
+
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-version-legacy',
+      version: 1,
+      migrate: (state, oldVersion) => {
+        expect(oldVersion).toBe(0)
+        return state
+      },
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    expect(store.getState().test).toEqual({ value: 3, name: 'legacy' })
+  })
+
+  it('defaults to version 0 when config has no version', async () => {
+    const persistedState = {
+      version: 0,
+      state: { test: { value: 7, name: 'default-version' } },
+    }
+    localStorage.setItem('test-version-default', JSON.stringify(persistedState))
+
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-version-default',
+      // No version specified — defaults to 0, should match stored version 0
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(api.hasHydrated()).toBe(true)
+    expect(store.getState().test).toEqual({
+      value: 7,
+      name: 'default-version',
+    })
+  })
+
+  it('saves config version to storage', async () => {
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer } = createStorageMiddleware({
+      rootReducer,
+      key: 'test-version-save',
+      version: 3,
+      performance: { debounceMs: 100 },
+    })
+
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+
+    store.dispatch(increment())
+    await vi.advanceTimersByTimeAsync(100)
+
+    const saved = JSON.parse(localStorage.getItem('test-version-save')!)
+    expect(saved.version).toBe(3)
+  })
+})
+
 describe('loadStateFromStorage', () => {
   beforeEach(() => {
     localStorage.clear()

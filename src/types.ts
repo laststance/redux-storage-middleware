@@ -84,8 +84,8 @@ export interface JsonSerializerOptions {
  */
 export interface PersistedState<T = unknown> {
   /**
-   * Schema version (always 0 - reserved for future use)
-   * @internal
+   * Schema version for migration support
+   * Compared against StorageMiddlewareConfig.version on load
    */
   version: number
 
@@ -233,6 +233,37 @@ export interface StorageMiddlewareConfig<S = unknown> {
    * @example createCompressedSerializer() // Compressed with lz-string
    */
   serializer?: Serializer
+
+  // ---------------------------------------------------------------------------
+  // Version Management
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Schema version for persisted state
+   * Increment when the state shape changes
+   *
+   * @default 0
+   * @example 1
+   */
+  version?: number
+
+  /**
+   * Migration function called when stored version !== config version
+   * Receives the old state and old version, returns the migrated state
+   * If not provided and version mismatches, storage is cleared (safe default)
+   *
+   * @param state - The persisted state from storage
+   * @param oldVersion - The version stored in storage
+   * @returns The migrated state matching the current version's shape
+   * @example
+   * migrate: (state, oldVersion) => {
+   *   if (oldVersion < 1) {
+   *     state.settings = { ...state.settings, newField: 'default' }
+   *   }
+   *   return state
+   * }
+   */
+  migrate?: (state: Partial<S>, oldVersion: number) => Partial<S>
 
   // ---------------------------------------------------------------------------
   // Merge Strategy
