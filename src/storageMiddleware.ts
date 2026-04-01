@@ -173,7 +173,6 @@ function deepMerge<T extends object>(
  *   rootReducer,  // Required: pass your root reducer
  *   key: 'my-app-state',
  *   slices: ['settings'],
- *   version: 1,
  * })
  *
  * const store = configureStore({
