@@ -80,7 +80,6 @@ describe('createStorageMiddleware', () => {
   it('saves specified slices to LocalStorage', async () => {
     const rootReducer = combineReducers({
       test: testSlice.reducer,
-      settings: settingsSlice.reducer,
     })
 
     const { middleware, reducer } = createStorageMiddleware({
