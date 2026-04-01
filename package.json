@@ -27,7 +27,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests/tsconfig.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky",
