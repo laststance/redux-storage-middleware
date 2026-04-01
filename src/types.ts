@@ -206,7 +206,7 @@ export interface StorageMiddlewareConfig<S = unknown> {
    *
    * @example ['settings', 'preferences']
    */
-  slices?: string[]
+  slices?: (keyof S & string)[]
 
   // ---------------------------------------------------------------------------
   // Performance
