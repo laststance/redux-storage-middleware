@@ -1,6 +1,6 @@
 {
   "name": "@laststance/redux-storage-middleware",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "type": "module",
   "description": "SSR-safe Redux middleware for LocalStorage persistence with hydration control",
   "main": "./dist/index.cjs",
