@@ -1,4 +1,7 @@
 {
+  "hooks": {
+    "before:init": "pnpm build"
+  },
   "git": {
     "changelog": null,
     "tag": true,
