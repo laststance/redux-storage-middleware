@@ -12,7 +12,8 @@ SSR-safe Redux Toolkit middleware for localStorage persistence with selective sl
 - 🎯 **Selective Persistence**: Choose which slices to persist with `slices` option
 - ⚡ **Performance Optimized**: Debounced/throttled writes, idle callback support
 - 📦 **Simple API**: Minimal configuration, maximum productivity
-- 🧪 **Battle-Tested**: 100+ tests, high coverage, E2E verified with 5000+ items
+- 🔄 **Version Migration**: Schema versioning with custom migration functions
+- 🧪 **Battle-Tested**: 160+ tests, high coverage, E2E verified with 5000+ items
 
 ---
 
@@ -27,6 +28,9 @@ SSR-safe Redux Toolkit middleware for localStorage persistence with selective sl
   - [Serializers](#serializers)
 - [Advanced Usage](#advanced-usage)
   - [SSR Integration](#ssr-integration)
+  - [Version Migration](#version-migration)
+  - [Custom Storage Backend](#custom-storage-backend)
+  - [Custom Merge Strategy](#custom-merge-strategy)
 - [Performance](#performance)
   - [Benchmark Results](#benchmark-results)
   - [10 Optimization Approaches](#10-optimization-approaches)
@@ -106,11 +110,16 @@ Creates the storage middleware and returns both the middleware and a control API
 
 #### Configuration Options
 
-| Option        | Type                    | Default      | Description                                |
-| ------------- | ----------------------- | ------------ | ------------------------------------------ |
-| `rootReducer` | `Reducer<S, AnyAction>` | **required** | Root reducer to wrap with hydration        |
-| `key`         | `string`                | **required** | localStorage key                           |
-| `slices`      | `(keyof S)[]`           | `undefined`  | State slices to persist (all if undefined) |
+| Option        | Type                                                    | Default                    | Description                                         |
+| ------------- | ------------------------------------------------------- | -------------------------- | --------------------------------------------------- |
+| `rootReducer` | `Reducer<S, AnyAction>`                                 | **required**               | Root reducer to wrap with hydration                 |
+| `key`         | `string`                                                | **required**               | localStorage key                                    |
+| `slices`      | `(keyof S)[]`                                           | `undefined`                | State slices to persist (all if undefined)          |
+| `storage`     | `SyncStorage`                                           | `createSafeLocalStorage()` | Custom storage backend                              |
+| `serializer`  | `Serializer`                                            | `defaultJsonSerializer`    | Custom serializer for state persistence             |
+| `version`     | `number`                                                | `0`                        | Schema version — increment when state shape changes |
+| `migrate`     | `(state: Partial<S>, oldVersion: number) => Partial<S>` | `undefined`                | Migration function for version mismatches           |
+| `merge`       | `(persisted: Partial<S>, current: S) => S`              | shallow merge              | Custom merge strategy for hydration                 |
 
 #### Performance Options
 
@@ -290,6 +299,88 @@ export function StoreProvider({ children }) {
 }
 ```
 
+### Version Migration
+
+When your state shape changes between releases, use `version` and `migrate` to handle the transition:
+
+```typescript
+const { middleware, reducer, api } = createStorageMiddleware<AppState>({
+  rootReducer,
+  key: 'my-app-state',
+  slices: ['settings'],
+  version: 2, // Increment when state shape changes
+  migrate: (state, oldVersion) => {
+    if (oldVersion < 1) {
+      // v0 → v1: added theme field
+      state.settings = { ...state.settings, theme: 'system' }
+    }
+    if (oldVersion < 2) {
+      // v1 → v2: renamed 'lang' to 'locale'
+      const { lang, ...rest } = state.settings as any
+      state.settings = { ...rest, locale: lang ?? 'en' }
+    }
+    return state
+  },
+})
+```
+
+**Behavior:**
+
+| Scenario                              | What happens                                      |
+| ------------------------------------- | ------------------------------------------------- |
+| Stored version matches config         | Normal hydration, no migration                    |
+| Version mismatch + `migrate` provided | Runs migration, saves migrated state to storage   |
+| Version mismatch + no `migrate`       | Clears storage (safe default), uses initial state |
+| Migration throws an error             | Clears storage, calls `onError` callback          |
+| Legacy data without version field     | Treated as version `0`                            |
+
+### Custom Storage Backend
+
+```typescript
+import {
+  createSafeSessionStorage,
+  createMemoryStorage,
+} from '@laststance/redux-storage-middleware'
+
+// Use sessionStorage instead of localStorage
+const { middleware, reducer, api } = createStorageMiddleware<AppState>({
+  rootReducer,
+  key: 'my-app-state',
+  storage: createSafeSessionStorage(),
+})
+
+// Use in-memory storage for testing
+const { middleware, reducer, api } = createStorageMiddleware<AppState>({
+  rootReducer,
+  key: 'test-state',
+  storage: createMemoryStorage(),
+})
+```
+
+### Custom Merge Strategy
+
+```typescript
+import { deepMerge } from '@laststance/redux-storage-middleware'
+
+// Deep merge for nested state (default is shallow merge)
+const { middleware, reducer, api } = createStorageMiddleware<AppState>({
+  rootReducer,
+  key: 'my-app-state',
+  merge: deepMerge,
+})
+
+// Custom merge: keep some fields from current state
+const { middleware, reducer, api } = createStorageMiddleware<AppState>({
+  rootReducer,
+  key: 'my-app-state',
+  merge: (persisted, current) => ({
+    ...current,
+    ...persisted,
+    settings: { ...current.settings, ...persisted.settings },
+  }),
+})
+```
+
 ---
 
 ## Performance
@@ -361,7 +452,7 @@ pnpm test:run       # Single run
 pnpm test:coverage  # With coverage
 ```
 
-**Coverage:** 145 tests with 80%+ coverage across 9 test files:
+**Coverage:** 160 tests with 80%+ coverage across 9 test files:
 
 | Category              | Tests | Coverage                             |
 | --------------------- | ----- | ------------------------------------ |
