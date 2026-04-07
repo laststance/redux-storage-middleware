@@ -81,6 +81,10 @@ jobs:
         run: pnpm install --ignore-workspace
         working-directory: examples/gmail-clone
 
+      - name: Install Playwright browsers for E2E
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: examples/gmail-clone
+
       - name: Build gmail-clone example
         run: pnpm build
         working-directory: examples/gmail-clone
