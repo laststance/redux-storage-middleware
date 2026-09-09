@@ -6,7 +6,7 @@
  * Custom storage objects are used for error simulation tests.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, test, expect, beforeEach, vi } from 'vitest'
 
 import {
   createSafeLocalStorage,
@@ -24,21 +24,21 @@ describe('createSafeLocalStorage', () => {
     vi.clearAllMocks()
   })
 
-  it('retrieves value from localStorage with getItem', () => {
+  test('retrieves value from localStorage with getItem', () => {
     localStorage.setItem('test', 'value')
     const storage = createSafeLocalStorage()
 
     expect(storage.getItem('test')).toBe('value')
   })
 
-  it('saves value to localStorage with setItem', () => {
+  test('saves value to localStorage with setItem', () => {
     const storage = createSafeLocalStorage()
     storage.setItem('test', 'value')
 
     expect(localStorage.getItem('test')).toBe('value')
   })
 
-  it('removes value from localStorage with removeItem', () => {
+  test('removes value from localStorage with removeItem', () => {
     localStorage.setItem('test', 'value')
     const storage = createSafeLocalStorage()
     storage.removeItem('test')
@@ -46,7 +46,7 @@ describe('createSafeLocalStorage', () => {
     expect(localStorage.getItem('test')).toBeNull()
   })
 
-  it('returns null and outputs warning when getItem fails on custom storage', () => {
+  test('returns null and outputs warning when getItem fails on custom storage', () => {
     const consoleWarnSpy = vi
       .spyOn(console, 'warn')
       .mockImplementation(() => {})
@@ -76,7 +76,7 @@ describe('createSafeLocalStorage', () => {
     consoleWarnSpy.mockRestore()
   })
 
-  it('handles setItem with normal values', () => {
+  test('handles setItem with normal values', () => {
     const storage = createSafeLocalStorage()
 
     // Test normal operation
@@ -88,7 +88,7 @@ describe('createSafeLocalStorage', () => {
     expect(storage.getItem('test')).toBe('new-value')
   })
 
-  it('handles removeItem correctly', () => {
+  test('handles removeItem correctly', () => {
     const storage = createSafeLocalStorage()
 
     storage.setItem('test', 'value')
@@ -100,36 +100,36 @@ describe('createSafeLocalStorage', () => {
 })
 
 describe('createNoopStorage', () => {
-  it('getItem always returns null', () => {
+  test('getItem always returns null', () => {
     const storage = createNoopStorage()
     expect(storage.getItem('any-key')).toBeNull()
   })
 
-  it('setItem does nothing', () => {
+  test('setItem does nothing', () => {
     const storage = createNoopStorage()
     expect(() => storage.setItem('key', 'value')).not.toThrow()
   })
 
-  it('removeItem does nothing', () => {
+  test('removeItem does nothing', () => {
     const storage = createNoopStorage()
     expect(() => storage.removeItem('key')).not.toThrow()
   })
 })
 
 describe('createMemoryStorage', () => {
-  it('can save and retrieve values', () => {
+  test('can save and retrieve values', () => {
     const storage = createMemoryStorage()
 
     storage.setItem('key', 'value')
     expect(storage.getItem('key')).toBe('value')
   })
 
-  it('returns null for non-existent keys', () => {
+  test('returns null for non-existent keys', () => {
     const storage = createMemoryStorage()
     expect(storage.getItem('non-existent')).toBeNull()
   })
 
-  it('can remove values', () => {
+  test('can remove values', () => {
     const storage = createMemoryStorage()
 
     storage.setItem('key', 'value')
@@ -138,7 +138,7 @@ describe('createMemoryStorage', () => {
     expect(storage.getItem('key')).toBeNull()
   })
 
-  it('can manage multiple keys independently', () => {
+  test('can manage multiple keys independently', () => {
     const storage = createMemoryStorage()
 
     storage.setItem('key1', 'value1')
@@ -150,7 +150,7 @@ describe('createMemoryStorage', () => {
 })
 
 describe('toAsyncStorage', () => {
-  it('converts sync storage to async storage', async () => {
+  test('converts sync storage to async storage', async () => {
     const syncStorage = createMemoryStorage()
     const asyncStorage = toAsyncStorage(syncStorage)
 
@@ -160,7 +160,7 @@ describe('toAsyncStorage', () => {
     expect(result).toBe('value')
   })
 
-  it('removeItem also works asynchronously', async () => {
+  test('removeItem also works asynchronously', async () => {
     const syncStorage = createMemoryStorage()
     const asyncStorage = toAsyncStorage(syncStorage)
 
@@ -173,25 +173,25 @@ describe('toAsyncStorage', () => {
 })
 
 describe('isValidStorage', () => {
-  it('returns true for valid storage objects', () => {
+  test('returns true for valid storage objects', () => {
     const storage = createMemoryStorage()
     expect(isValidStorage(storage)).toBe(true)
   })
 
-  it('returns false for null', () => {
+  test('returns false for null', () => {
     expect(isValidStorage(null)).toBe(false)
   })
 
-  it('returns false for undefined', () => {
+  test('returns false for undefined', () => {
     expect(isValidStorage(undefined)).toBe(false)
   })
 
-  it('returns false for non-objects', () => {
+  test('returns false for non-objects', () => {
     expect(isValidStorage('string')).toBe(false)
     expect(isValidStorage(123)).toBe(false)
   })
 
-  it('returns false for objects without required methods', () => {
+  test('returns false for objects without required methods', () => {
     expect(isValidStorage({ getItem: () => null })).toBe(false)
     expect(isValidStorage({ getItem: () => null, setItem: () => {} })).toBe(
       false,
@@ -200,7 +200,7 @@ describe('isValidStorage', () => {
 })
 
 describe('getStorageSize', () => {
-  it('returns the size of saved values', () => {
+  test('returns the size of saved values', () => {
     const storage = createMemoryStorage()
     storage.setItem('key', 'value')
 
@@ -208,7 +208,7 @@ describe('getStorageSize', () => {
     expect(getStorageSize(storage, 'key')).toBe(16)
   })
 
-  it('returns 0 for non-existent keys', () => {
+  test('returns 0 for non-existent keys', () => {
     const storage = createMemoryStorage()
     expect(getStorageSize(storage, 'non-existent')).toBe(0)
   })
@@ -220,14 +220,14 @@ describe('getRemainingStorageQuota', () => {
     vi.clearAllMocks()
   })
 
-  it('returns estimated remaining bytes for real localStorage', () => {
+  test('returns estimated remaining bytes for real localStorage', () => {
     const result = getRemainingStorageQuota()
 
     // Should return a positive value (localStorage is available in browser)
     expect(result).toBeGreaterThanOrEqual(0)
   })
 
-  it('returns reasonable quota estimate', () => {
+  test('returns reasonable quota estimate', () => {
     // Add some data to localStorage
     localStorage.setItem('test-quota', 'x'.repeat(1000))
 
@@ -241,7 +241,7 @@ describe('getRemainingStorageQuota', () => {
 })
 
 describe('Error Handling with Custom Storage', () => {
-  it('createMemoryStorage can simulate error scenarios', () => {
+  test('createMemoryStorage can simulate error scenarios', () => {
     const storage = createMemoryStorage()
 
     // Override setItem to throw
@@ -263,7 +263,7 @@ describe('Error Handling with Custom Storage', () => {
     )
   })
 
-  it('createMemoryStorage can simulate getItem errors', () => {
+  test('createMemoryStorage can simulate getItem errors', () => {
     const storage = createMemoryStorage()
 
     storage.setItem('key', 'value')
@@ -284,7 +284,7 @@ describe('Error Handling with Custom Storage', () => {
     expect(() => storage.getItem('error-key')).toThrow('Storage access denied')
   })
 
-  it('createMemoryStorage can simulate removeItem errors', () => {
+  test('createMemoryStorage can simulate removeItem errors', () => {
     const storage = createMemoryStorage()
 
     storage.setItem('key', 'value')

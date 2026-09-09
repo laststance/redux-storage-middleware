@@ -7,7 +7,7 @@
  * if installed, or test error handling when not installed.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import {
   createSuperJsonSerializer,
@@ -25,14 +25,14 @@ describe('SuperJSON Serializer', () => {
   })
 
   describe('isSuperJsonLoaded', () => {
-    it('returns a boolean value', () => {
+    test('returns a boolean value', () => {
       const result = isSuperJsonLoaded()
       expect(typeof result).toBe('boolean')
     })
   })
 
   describe('initSuperJsonSerializer', () => {
-    it('can be called without throwing', async () => {
+    test('can be called without throwing', async () => {
       // In browser mode, this will either:
       // 1. Initialize successfully if superjson is installed
       // 2. Throw if superjson is not installed
@@ -48,7 +48,7 @@ describe('SuperJSON Serializer', () => {
   })
 
   describe('createSuperJsonSerializer', () => {
-    it('throws error when used before initialization if superjson not loaded', () => {
+    test('throws error when used before initialization if superjson not loaded', () => {
       // If superjson is not loaded, this should throw
       if (!isSuperJsonLoaded()) {
         const serializer = createSuperJsonSerializer()
@@ -56,7 +56,7 @@ describe('SuperJSON Serializer', () => {
       }
     })
 
-    it('can create serializer instance', () => {
+    test('can create serializer instance', () => {
       const serializer = createSuperJsonSerializer()
       expect(serializer).toHaveProperty('serialize')
       expect(serializer).toHaveProperty('deserialize')
@@ -64,7 +64,7 @@ describe('SuperJSON Serializer', () => {
   })
 
   describe('Integration with superjson (if installed)', () => {
-    it('can serialize and deserialize when superjson is available', async () => {
+    test('can serialize and deserialize when superjson is available', async () => {
       try {
         await initSuperJsonSerializer()
 
@@ -84,7 +84,7 @@ describe('SuperJSON Serializer', () => {
       }
     })
 
-    it('can serialize and deserialize arrays when superjson is available', async () => {
+    test('can serialize and deserialize arrays when superjson is available', async () => {
       try {
         await initSuperJsonSerializer()
 
@@ -103,7 +103,7 @@ describe('SuperJSON Serializer', () => {
       }
     })
 
-    it('can handle null values when superjson is available', async () => {
+    test('can handle null values when superjson is available', async () => {
       try {
         await initSuperJsonSerializer()
 
@@ -122,7 +122,7 @@ describe('SuperJSON Serializer', () => {
       }
     })
 
-    it('typed serializer preserves type information when superjson is available', async () => {
+    test('typed serializer preserves type information when superjson is available', async () => {
       try {
         await initSuperJsonSerializer()
 

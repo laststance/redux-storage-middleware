@@ -2,7 +2,7 @@
  * Throttle Utility Tests
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 
 import { throttle, scheduleIdleCallback } from '../../src/utils/throttle'
 
@@ -15,7 +15,7 @@ describe('throttle', () => {
     vi.useRealTimers()
   })
 
-  it('executes immediately on the first call', () => {
+  test('executes immediately on the first call', () => {
     const fn = vi.fn()
     const { throttledFn } = throttle(fn, 100)
 
@@ -25,7 +25,7 @@ describe('throttle', () => {
     expect(fn).toHaveBeenCalledWith('arg1')
   })
 
-  it('executes calls within throttle period after the period ends', async () => {
+  test('executes calls within throttle period after the period ends', async () => {
     const fn = vi.fn()
     const { throttledFn } = throttle(fn, 100)
 
@@ -42,7 +42,7 @@ describe('throttle', () => {
     expect(fn).toHaveBeenLastCalledWith('arg3')
   })
 
-  it('can execute immediately again after the throttle period', async () => {
+  test('can execute immediately again after the throttle period', async () => {
     const fn = vi.fn()
     const { throttledFn } = throttle(fn, 100)
 
@@ -56,7 +56,7 @@ describe('throttle', () => {
     expect(fn).toHaveBeenLastCalledWith('arg2')
   })
 
-  it('can cancel pending execution with cancel', async () => {
+  test('can cancel pending execution with cancel', async () => {
     const fn = vi.fn()
     const { throttledFn, cancel } = throttle(fn, 100)
 
@@ -80,7 +80,7 @@ describe('scheduleIdleCallback', () => {
     vi.useRealTimers()
   })
 
-  it('falls back to setTimeout when requestIdleCallback is not available', async () => {
+  test('falls back to setTimeout when requestIdleCallback is not available', async () => {
     const fn = vi.fn()
     const { scheduledFn } = scheduleIdleCallback(fn)
 
@@ -94,7 +94,7 @@ describe('scheduleIdleCallback', () => {
     expect(fn).toHaveBeenCalledWith('arg1')
   })
 
-  it('uses the last argument when called consecutively', async () => {
+  test('uses the last argument when called consecutively', async () => {
     const fn = vi.fn()
     const { scheduledFn } = scheduleIdleCallback(fn)
 
@@ -108,7 +108,7 @@ describe('scheduleIdleCallback', () => {
     expect(fn).toHaveBeenCalledWith('arg3')
   })
 
-  it('can cancel pending execution with cancel', async () => {
+  test('can cancel pending execution with cancel', async () => {
     const fn = vi.fn()
     const { scheduledFn, cancel } = scheduleIdleCallback(fn)
 

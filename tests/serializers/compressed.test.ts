@@ -7,7 +7,7 @@
  * if installed, or test error handling when not installed.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import {
   createCompressedSerializer,
@@ -26,14 +26,14 @@ describe('Compressed Serializer', () => {
   })
 
   describe('isLZStringLoaded', () => {
-    it('returns a boolean value', () => {
+    test('returns a boolean value', () => {
       const result = isLZStringLoaded()
       expect(typeof result).toBe('boolean')
     })
   })
 
   describe('initCompressedSerializer', () => {
-    it('can be called without throwing', async () => {
+    test('can be called without throwing', async () => {
       // In browser mode, this will either:
       // 1. Initialize successfully if lz-string is installed
       // 2. Throw if lz-string is not installed
@@ -49,7 +49,7 @@ describe('Compressed Serializer', () => {
   })
 
   describe('createCompressedSerializer', () => {
-    it('throws error when used before initialization if lz-string not loaded', () => {
+    test('throws error when used before initialization if lz-string not loaded', () => {
       // Reset module state for this test
       // If lz-string is not loaded, this should throw
       if (!isLZStringLoaded()) {
@@ -58,13 +58,13 @@ describe('Compressed Serializer', () => {
       }
     })
 
-    it('can create serializer instance', () => {
+    test('can create serializer instance', () => {
       const serializer = createCompressedSerializer()
       expect(serializer).toHaveProperty('serialize')
       expect(serializer).toHaveProperty('deserialize')
     })
 
-    it('can create serializer with options', () => {
+    test('can create serializer with options', () => {
       const serializer = createCompressedSerializer({
         format: 'utf16',
       })
@@ -72,7 +72,7 @@ describe('Compressed Serializer', () => {
       expect(serializer).toHaveProperty('deserialize')
     })
 
-    it('can create serializer with base64 format', () => {
+    test('can create serializer with base64 format', () => {
       const serializer = createCompressedSerializer({
         format: 'base64',
       })
@@ -80,7 +80,7 @@ describe('Compressed Serializer', () => {
       expect(serializer).toHaveProperty('deserialize')
     })
 
-    it('can create serializer with uri format', () => {
+    test('can create serializer with uri format', () => {
       const serializer = createCompressedSerializer({
         format: 'uri',
       })
@@ -90,7 +90,7 @@ describe('Compressed Serializer', () => {
   })
 
   describe('getCompressionRatio', () => {
-    it('calculates compression ratio correctly', () => {
+    test('calculates compression ratio correctly', () => {
       const original = 'a'.repeat(100)
       const compressedStr = 'a'.repeat(50)
 
@@ -98,7 +98,7 @@ describe('Compressed Serializer', () => {
       expect(ratio).toBe(0.5)
     })
 
-    it('returns 1 when no compression', () => {
+    test('returns 1 when no compression', () => {
       const original = 'test'
       const compressedStr = 'test'
 
@@ -106,7 +106,7 @@ describe('Compressed Serializer', () => {
       expect(ratio).toBe(1)
     })
 
-    it('returns ratio greater than 1 for expansion', () => {
+    test('returns ratio greater than 1 for expansion', () => {
       const original = 'ab'
       const compressedStr = 'abcd'
 
@@ -114,7 +114,7 @@ describe('Compressed Serializer', () => {
       expect(ratio).toBe(2)
     })
 
-    it('handles empty strings', () => {
+    test('handles empty strings', () => {
       const original = ''
       const compressedStr = ''
 
@@ -125,7 +125,7 @@ describe('Compressed Serializer', () => {
   })
 
   describe('Integration with lz-string (if installed)', () => {
-    it('can serialize and deserialize when lz-string is available', async () => {
+    test('can serialize and deserialize when lz-string is available', async () => {
       try {
         await initCompressedSerializer()
 

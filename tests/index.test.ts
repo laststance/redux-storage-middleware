@@ -4,7 +4,7 @@
  * Verifies that all exports from index.ts work correctly
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
 import {
   // Core
@@ -46,27 +46,27 @@ import {
 
 describe('Package Exports', () => {
   describe('Core exports', () => {
-    it('exports createStorageMiddleware', () => {
+    test('exports createStorageMiddleware', () => {
       expect(typeof createStorageMiddleware).toBe('function')
     })
 
-    it('exports loadStateFromStorage', () => {
+    test('exports loadStateFromStorage', () => {
       expect(typeof loadStateFromStorage).toBe('function')
     })
 
-    it('exports clearStorageState', () => {
+    test('exports clearStorageState', () => {
       expect(typeof clearStorageState).toBe('function')
     })
 
-    it('exports shallowMerge', () => {
+    test('exports shallowMerge', () => {
       expect(typeof shallowMerge).toBe('function')
     })
 
-    it('exports deepMerge', () => {
+    test('exports deepMerge', () => {
       expect(typeof deepMerge).toBe('function')
     })
 
-    it('exports action constants', () => {
+    test('exports action constants', () => {
       expect(ACTION_HYDRATE_START).toBe(
         '@@redux-storage-middleware/HYDRATE_START',
       )
@@ -80,107 +80,107 @@ describe('Package Exports', () => {
   })
 
   describe('Storage exports', () => {
-    it('exports createSafeLocalStorage', () => {
+    test('exports createSafeLocalStorage', () => {
       expect(typeof createSafeLocalStorage).toBe('function')
     })
 
-    it('exports createSafeSessionStorage', () => {
+    test('exports createSafeSessionStorage', () => {
       expect(typeof createSafeSessionStorage).toBe('function')
     })
 
-    it('exports createNoopStorage', () => {
+    test('exports createNoopStorage', () => {
       expect(typeof createNoopStorage).toBe('function')
     })
 
-    it('exports createMemoryStorage', () => {
+    test('exports createMemoryStorage', () => {
       expect(typeof createMemoryStorage).toBe('function')
     })
 
-    it('exports toAsyncStorage', () => {
+    test('exports toAsyncStorage', () => {
       expect(typeof toAsyncStorage).toBe('function')
     })
 
-    it('exports isValidStorage', () => {
+    test('exports isValidStorage', () => {
       expect(typeof isValidStorage).toBe('function')
     })
 
-    it('exports getStorageSize', () => {
+    test('exports getStorageSize', () => {
       expect(typeof getStorageSize).toBe('function')
     })
 
-    it('exports getRemainingStorageQuota', () => {
+    test('exports getRemainingStorageQuota', () => {
       expect(typeof getRemainingStorageQuota).toBe('function')
     })
   })
 
   describe('Serializer exports', () => {
-    it('exports createJsonSerializer', () => {
+    test('exports createJsonSerializer', () => {
       expect(typeof createJsonSerializer).toBe('function')
     })
 
-    it('exports createEnhancedJsonSerializer', () => {
+    test('exports createEnhancedJsonSerializer', () => {
       expect(typeof createEnhancedJsonSerializer).toBe('function')
     })
 
-    it('exports defaultJsonSerializer', () => {
+    test('exports defaultJsonSerializer', () => {
       expect(defaultJsonSerializer).toHaveProperty('serialize')
       expect(defaultJsonSerializer).toHaveProperty('deserialize')
     })
 
-    it('exports dateReplacer', () => {
+    test('exports dateReplacer', () => {
       expect(typeof dateReplacer).toBe('function')
     })
 
-    it('exports dateReviver', () => {
+    test('exports dateReviver', () => {
       expect(typeof dateReviver).toBe('function')
     })
 
-    it('exports collectionReplacer', () => {
+    test('exports collectionReplacer', () => {
       expect(typeof collectionReplacer).toBe('function')
     })
 
-    it('exports collectionReviver', () => {
+    test('exports collectionReviver', () => {
       expect(typeof collectionReviver).toBe('function')
     })
   })
 
   describe('Utility exports', () => {
-    it('exports isServer', () => {
+    test('exports isServer', () => {
       expect(typeof isServer).toBe('function')
     })
 
-    it('exports isBrowser', () => {
+    test('exports isBrowser', () => {
       expect(typeof isBrowser).toBe('function')
     })
 
-    it('exports isStorageAvailable', () => {
+    test('exports isStorageAvailable', () => {
       expect(typeof isStorageAvailable).toBe('function')
     })
 
-    it('exports isSessionStorageAvailable', () => {
+    test('exports isSessionStorageAvailable', () => {
       expect(typeof isSessionStorageAvailable).toBe('function')
     })
 
-    it('exports debounce', () => {
+    test('exports debounce', () => {
       expect(typeof debounce).toBe('function')
     })
 
-    it('exports debounceLeading', () => {
+    test('exports debounceLeading', () => {
       expect(typeof debounceLeading).toBe('function')
     })
 
-    it('exports throttle', () => {
+    test('exports throttle', () => {
       expect(typeof throttle).toBe('function')
     })
 
-    it('exports scheduleIdleCallback', () => {
+    test('exports scheduleIdleCallback', () => {
       expect(typeof scheduleIdleCallback).toBe('function')
     })
   })
 })
 
 describe('Serializers Index Exports', () => {
-  it('exports all serializers from serializers/index', async () => {
+  test('exports all serializers from serializers/index', async () => {
     const serializers = await import('../src/serializers')
 
     expect(typeof serializers.createJsonSerializer).toBe('function')
@@ -201,7 +201,7 @@ describe('Serializers Index Exports', () => {
 })
 
 describe('Utils Index Exports', () => {
-  it('exports all utilities from utils/index', async () => {
+  test('exports all utilities from utils/index', async () => {
     const utils = await import('../src/utils')
 
     expect(typeof utils.isServer).toBe('function')

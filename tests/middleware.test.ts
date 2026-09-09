@@ -12,7 +12,7 @@
 
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { combineReducers, configureStore, createSlice } from '@reduxjs/toolkit'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 
 import {
   createStorageMiddleware,
@@ -77,7 +77,7 @@ describe('createStorageMiddleware', () => {
     vi.useRealTimers()
   })
 
-  it('saves specified slices to LocalStorage', async () => {
+  test('saves specified slices to LocalStorage', async () => {
     const rootReducer = combineReducers({
       test: testSlice.reducer,
     })
@@ -114,7 +114,7 @@ describe('createStorageMiddleware', () => {
     expect(parsed.state).not.toHaveProperty('settings')
   })
 
-  it('debounces and saves multiple actions', async () => {
+  test('debounces and saves multiple actions', async () => {
     // Spy on real localStorage
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
 
@@ -167,7 +167,7 @@ describe('createStorageMiddleware', () => {
     setItemSpy.mockRestore()
   })
 
-  it('can use throttle with throttleMs option', async () => {
+  test('can use throttle with throttleMs option', async () => {
     // Spy on real localStorage
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
 
@@ -213,7 +213,7 @@ describe('createStorageMiddleware', () => {
     setItemSpy.mockRestore()
   })
 
-  it('performs auto-hydration by default', async () => {
+  test('performs auto-hydration by default', async () => {
     const preloadedState: PersistedState = {
       version: 0,
       state: { test: { value: 99, name: 'restored' } },
@@ -244,7 +244,7 @@ describe('createStorageMiddleware', () => {
     expect(onHydrationComplete).toHaveBeenCalled()
   })
 
-  it('calls onSaveComplete callback', async () => {
+  test('calls onSaveComplete callback', async () => {
     const onSaveComplete = vi.fn()
 
     const rootReducer = combineReducers({
@@ -288,7 +288,7 @@ describe('Hydration API', () => {
     vi.useRealTimers()
   })
 
-  it('api.hasHydrated() correctly reports hydration completion', async () => {
+  test('api.hasHydrated() correctly reports hydration completion', async () => {
     const preloadedState: PersistedState = {
       version: 0,
       state: { test: { value: 10, name: 'restored' } },
@@ -319,7 +319,7 @@ describe('Hydration API', () => {
     expect(api.hasHydrated()).toBe(true)
   })
 
-  it('api.getHydrationState() returns correct state', async () => {
+  test('api.getHydrationState() returns correct state', async () => {
     const rootReducer = combineReducers({
       test: testSlice.reducer,
     })
@@ -344,7 +344,7 @@ describe('Hydration API', () => {
     expect(api.getHydrationState()).toBe('hydrated')
   })
 
-  it('api.clearStorage() can clear storage', async () => {
+  test('api.clearStorage() can clear storage', async () => {
     localStorage.setItem(
       'test-clear',
       JSON.stringify({ version: 0, state: {} }),
@@ -372,7 +372,7 @@ describe('Hydration API', () => {
     expect(localStorage.getItem('test-clear')).toBeNull()
   })
 
-  it('api.onFinishHydration() can register callbacks', async () => {
+  test('api.onFinishHydration() can register callbacks', async () => {
     const preloadedState: PersistedState = {
       version: 0,
       state: { test: { value: 42, name: 'test' } },
@@ -407,7 +407,7 @@ describe('Hydration API', () => {
     unsubscribe()
   })
 
-  it('onFinishHydration immediately calls callback if hydration already completed', async () => {
+  test('onFinishHydration immediately calls callback if hydration already completed', async () => {
     const preloadedState: PersistedState = {
       version: 0,
       state: { test: { value: 1, name: 'test' } },
@@ -452,7 +452,7 @@ describe('Merge Strategy', () => {
     vi.useRealTimers()
   })
 
-  it('uses shallowMerge by default', async () => {
+  test('uses shallowMerge by default', async () => {
     const persistedState = {
       version: 0,
       state: { test: { value: 99, name: 'persisted' } },
@@ -488,7 +488,7 @@ describe('Merge Strategy', () => {
     })
   })
 
-  it('uses deepMerge when provided', async () => {
+  test('uses deepMerge when provided', async () => {
     const persistedState = {
       version: 0,
       state: { test: { value: 42 } },
@@ -520,7 +520,7 @@ describe('Merge Strategy', () => {
     expect(store.getState().test).toEqual({ value: 42, name: 'initial' })
   })
 
-  it('uses custom merge function when provided', async () => {
+  test('uses custom merge function when provided', async () => {
     const persistedState = {
       version: 0,
       state: { test: { value: 50, name: 'saved' } },
@@ -586,7 +586,7 @@ describe('Custom Storage', () => {
     vi.useRealTimers()
   })
 
-  it('uses custom storage instead of localStorage', async () => {
+  test('uses custom storage instead of localStorage', async () => {
     const memStorage = createMemoryStorage()
 
     const rootReducer = combineReducers({
@@ -616,7 +616,7 @@ describe('Custom Storage', () => {
     expect(localStorage.getItem('test-custom-storage')).toBeNull()
   })
 
-  it('hydrates from custom storage', async () => {
+  test('hydrates from custom storage', async () => {
     const memStorage = createMemoryStorage()
     const persistedState = {
       version: 0,
@@ -647,7 +647,7 @@ describe('Custom Storage', () => {
     expect(store.getState().test).toEqual({ value: 77, name: 'from-memory' })
   })
 
-  it('clears custom storage via api.clearStorage()', async () => {
+  test('clears custom storage via api.clearStorage()', async () => {
     const memStorage = createMemoryStorage()
     memStorage.setItem(
       'test-clear-custom',
@@ -688,7 +688,7 @@ describe('Custom Serializer', () => {
     vi.useRealTimers()
   })
 
-  it('uses custom serializer for save and load', async () => {
+  test('uses custom serializer for save and load', async () => {
     // Custom serializer that wraps JSON with a prefix
     const PREFIX = 'CUSTOM:'
     const customSerializer = {
@@ -725,7 +725,7 @@ describe('Custom Serializer', () => {
     expect(raw!.startsWith(PREFIX)).toBe(true)
   })
 
-  it('hydrates from custom-serialized data', async () => {
+  test('hydrates from custom-serialized data', async () => {
     const PREFIX = 'CUSTOM:'
     const customSerializer = {
       serialize: (state: unknown): string => PREFIX + JSON.stringify(state),
@@ -777,7 +777,7 @@ describe('Version Management', () => {
     vi.useRealTimers()
   })
 
-  it('hydrates normally when versions match', async () => {
+  test('hydrates normally when versions match', async () => {
     const persistedState = {
       version: 1,
       state: { test: { value: 10, name: 'versioned' } },
@@ -804,7 +804,7 @@ describe('Version Management', () => {
     expect(store.getState().test).toEqual({ value: 10, name: 'versioned' })
   })
 
-  it('runs migrate on version mismatch', async () => {
+  test('runs migrate on version mismatch', async () => {
     const persistedState = {
       version: 0,
       state: { test: { value: 5, name: 'old' } },
@@ -848,7 +848,7 @@ describe('Version Management', () => {
     expect(saved.state.test.name).toBe('migrated')
   })
 
-  it('clears storage on version mismatch without migrate', async () => {
+  test('clears storage on version mismatch without migrate', async () => {
     const consoleWarnSpy = vi
       .spyOn(console, 'warn')
       .mockImplementation(() => {})
@@ -888,7 +888,7 @@ describe('Version Management', () => {
     consoleWarnSpy.mockRestore()
   })
 
-  it('clears storage and calls onError when migrate throws', async () => {
+  test('clears storage and calls onError when migrate throws', async () => {
     const consoleErrorSpy = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {})
@@ -934,7 +934,7 @@ describe('Version Management', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  it('treats legacy data without version as version 0', async () => {
+  test('treats legacy data without version as version 0', async () => {
     // Legacy data might not have a version field
     const legacyData = {
       state: { test: { value: 3, name: 'legacy' } },
@@ -965,7 +965,7 @@ describe('Version Management', () => {
     expect(store.getState().test).toEqual({ value: 3, name: 'legacy' })
   })
 
-  it('defaults to version 0 when config has no version', async () => {
+  test('defaults to version 0 when config has no version', async () => {
     const persistedState = {
       version: 0,
       state: { test: { value: 7, name: 'default-version' } },
@@ -995,7 +995,7 @@ describe('Version Management', () => {
     })
   })
 
-  it('saves config version to storage', async () => {
+  test('saves config version to storage', async () => {
     const rootReducer = combineReducers({ test: testSlice.reducer })
     const { middleware, reducer } = createStorageMiddleware({
       rootReducer,
@@ -1025,7 +1025,7 @@ describe('loadStateFromStorage', () => {
     localStorage.clear()
   })
 
-  it('correctly restores state from LocalStorage', () => {
+  test('correctly restores state from LocalStorage', () => {
     const state: PersistedState = {
       version: 0,
       state: { test: { value: 42, name: 'test' } },
@@ -1036,12 +1036,12 @@ describe('loadStateFromStorage', () => {
     expect(loaded).toEqual(state)
   })
 
-  it('returns null for non-existent keys', () => {
+  test('returns null for non-existent keys', () => {
     const loaded = loadStateFromStorage('non-existent-key')
     expect(loaded).toBeNull()
   })
 
-  it('returns null on JSON parse error', () => {
+  test('returns null on JSON parse error', () => {
     const consoleErrorSpy = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {})
@@ -1060,7 +1060,7 @@ describe('clearStorageState', () => {
     localStorage.clear()
   })
 
-  it('correctly removes state from LocalStorage', () => {
+  test('correctly removes state from LocalStorage', () => {
     localStorage.setItem('test-clear', JSON.stringify({ test: 'data' }))
 
     expect(localStorage.getItem('test-clear')).toBeTruthy()
@@ -1085,7 +1085,7 @@ describe('Integration Test: Store with Middleware', () => {
     vi.useRealTimers()
   })
 
-  it('restores state from LocalStorage on Store creation and saves changes', async () => {
+  test('restores state from LocalStorage on Store creation and saves changes', async () => {
     // Save initial state to LocalStorage
     const preloadedState: PersistedState = {
       version: 0,
@@ -1145,7 +1145,7 @@ describe('Storage Key Validation', () => {
   })
 
   describe('createStorageMiddleware', () => {
-    it('rejects empty keys', () => {
+    test('rejects empty keys', () => {
       expect(() =>
         createStorageMiddleware({
           rootReducer: validationRootReducer,
@@ -1155,7 +1155,7 @@ describe('Storage Key Validation', () => {
       ).toThrow('[redux-storage-middleware] Storage key must not be empty')
     })
 
-    it('rejects keys with invalid characters', () => {
+    test('rejects keys with invalid characters', () => {
       expect(() =>
         createStorageMiddleware({
           rootReducer: validationRootReducer,
@@ -1181,7 +1181,7 @@ describe('Storage Key Validation', () => {
       ).toThrow('contains invalid characters')
     })
 
-    it('rejects reserved keys', () => {
+    test('rejects reserved keys', () => {
       expect(() =>
         createStorageMiddleware({
           rootReducer: validationRootReducer,
@@ -1207,7 +1207,7 @@ describe('Storage Key Validation', () => {
       ).toThrow('is reserved and cannot be used')
     })
 
-    it('accepts valid keys', () => {
+    test('accepts valid keys', () => {
       expect(() =>
         createStorageMiddleware({
           rootReducer: validationRootReducer,
@@ -1235,13 +1235,13 @@ describe('Storage Key Validation', () => {
   })
 
   describe('loadStateFromStorage', () => {
-    it('rejects empty keys', () => {
+    test('rejects empty keys', () => {
       expect(() => loadStateFromStorage('')).toThrow(
         '[redux-storage-middleware] Storage key must not be empty',
       )
     })
 
-    it('rejects reserved keys', () => {
+    test('rejects reserved keys', () => {
       expect(() => loadStateFromStorage('__proto__')).toThrow(
         'is reserved and cannot be used',
       )
@@ -1249,13 +1249,13 @@ describe('Storage Key Validation', () => {
   })
 
   describe('clearStorageState', () => {
-    it('rejects empty keys', () => {
+    test('rejects empty keys', () => {
       expect(() => clearStorageState('')).toThrow(
         '[redux-storage-middleware] Storage key must not be empty',
       )
     })
 
-    it('rejects reserved keys', () => {
+    test('rejects reserved keys', () => {
       expect(() => clearStorageState('constructor')).toThrow(
         'is reserved and cannot be used',
       )

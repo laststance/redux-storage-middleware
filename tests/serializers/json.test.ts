@@ -2,7 +2,7 @@
  * JSON Serializer Tests
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 
 import {
   createJsonSerializer,
@@ -15,7 +15,7 @@ import {
 } from '../../src/serializers/json'
 
 describe('createJsonSerializer', () => {
-  it('can serialize and deserialize objects', () => {
+  test('can serialize and deserialize objects', () => {
     const serializer = createJsonSerializer()
     const data = { foo: 'bar', num: 42 }
 
@@ -25,7 +25,7 @@ describe('createJsonSerializer', () => {
     expect(deserialized).toEqual(data)
   })
 
-  it('can serialize and deserialize arrays', () => {
+  test('can serialize and deserialize arrays', () => {
     const serializer = createJsonSerializer()
     const data = [1, 2, 3, 'a', 'b', 'c']
 
@@ -35,7 +35,7 @@ describe('createJsonSerializer', () => {
     expect(deserialized).toEqual(data)
   })
 
-  it('can handle nested objects', () => {
+  test('can handle nested objects', () => {
     const serializer = createJsonSerializer()
     const data = {
       level1: {
@@ -51,7 +51,7 @@ describe('createJsonSerializer', () => {
     expect(deserialized).toEqual(data)
   })
 
-  it('can use replacer option', () => {
+  test('can use replacer option', () => {
     const replacer = (_key: string, value: unknown) => {
       if (typeof value === 'number') {
         return value * 2
@@ -67,7 +67,7 @@ describe('createJsonSerializer', () => {
     expect(JSON.parse(serialized)).toEqual({ num: 42 })
   })
 
-  it('can use reviver option', () => {
+  test('can use reviver option', () => {
     const reviver = (_key: string, value: unknown) => {
       if (typeof value === 'number') {
         return value / 2
@@ -83,7 +83,7 @@ describe('createJsonSerializer', () => {
     expect(deserialized).toEqual({ num: 21 })
   })
 
-  it('throws exception on serialization error', () => {
+  test('throws exception on serialization error', () => {
     const consoleErrorSpy = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {})
@@ -99,7 +99,7 @@ describe('createJsonSerializer', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  it('throws exception on deserialization error', () => {
+  test('throws exception on deserialization error', () => {
     const consoleErrorSpy = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {})
@@ -113,7 +113,7 @@ describe('createJsonSerializer', () => {
 })
 
 describe('dateReplacer / dateReviver', () => {
-  it('can convert Date object to string and restore', () => {
+  test('can convert Date object to string and restore', () => {
     const date = new Date('2025-01-01T00:00:00.000Z')
     const replaced = dateReplacer('', date)
 
@@ -126,7 +126,7 @@ describe('dateReplacer / dateReviver', () => {
     expect(revived).toEqual(date)
   })
 
-  it('returns non-Date values as is', () => {
+  test('returns non-Date values as is', () => {
     expect(dateReplacer('', 'string')).toBe('string')
     expect(dateReplacer('', 42)).toBe(42)
     expect(dateReviver('', 'string')).toBe('string')
@@ -134,7 +134,7 @@ describe('dateReplacer / dateReviver', () => {
 })
 
 describe('collectionReplacer / collectionReviver', () => {
-  it('can convert Map and restore', () => {
+  test('can convert Map and restore', () => {
     const map = new Map([
       ['key1', 'value1'],
       ['key2', 'value2'],
@@ -153,7 +153,7 @@ describe('collectionReplacer / collectionReviver', () => {
     expect(revived).toEqual(map)
   })
 
-  it('can convert Set and restore', () => {
+  test('can convert Set and restore', () => {
     const set = new Set([1, 2, 3])
     const replaced = collectionReplacer('', set)
 
@@ -166,7 +166,7 @@ describe('collectionReplacer / collectionReviver', () => {
     expect(revived).toEqual(set)
   })
 
-  it('can convert Date and restore', () => {
+  test('can convert Date and restore', () => {
     const date = new Date('2025-01-01T00:00:00.000Z')
     const replaced = collectionReplacer('', date)
 
@@ -181,7 +181,7 @@ describe('collectionReplacer / collectionReviver', () => {
 })
 
 describe('createEnhancedJsonSerializer', () => {
-  it('can serialize and deserialize objects containing Date/Map/Set', () => {
+  test('can serialize and deserialize objects containing Date/Map/Set', () => {
     const serializer = createEnhancedJsonSerializer()
     const data = {
       date: new Date('2025-01-01T00:00:00.000Z'),
@@ -208,7 +208,7 @@ describe('createEnhancedJsonSerializer', () => {
 })
 
 describe('defaultJsonSerializer', () => {
-  it('default serializer exists', () => {
+  test('default serializer exists', () => {
     expect(defaultJsonSerializer).toBeDefined()
     expect(typeof defaultJsonSerializer.serialize).toBe('function')
     expect(typeof defaultJsonSerializer.deserialize).toBe('function')
@@ -216,7 +216,7 @@ describe('defaultJsonSerializer', () => {
 })
 
 describe('Prototype Pollution Protection', () => {
-  it('prevents prototype pollution via __proto__ key', () => {
+  test('prevents prototype pollution via __proto__ key', () => {
     const serializer = createJsonSerializer()
     const maliciousPayload = '{"__proto__": {"polluted": true}}'
 
@@ -237,7 +237,7 @@ describe('Prototype Pollution Protection', () => {
     expect(Object.hasOwn(result, '__proto__')).toBe(false)
   })
 
-  it('prevents pollution via constructor.prototype', () => {
+  test('prevents pollution via constructor.prototype', () => {
     const serializer = createJsonSerializer()
     const maliciousPayload =
       '{"constructor": {"prototype": {"polluted": true}}}'
@@ -255,7 +255,7 @@ describe('Prototype Pollution Protection', () => {
     expect(Object.hasOwn(result, 'constructor')).toBe(false)
   })
 
-  it('filters prototype key', () => {
+  test('filters prototype key', () => {
     const serializer = createJsonSerializer()
     const maliciousPayload = '{"prototype": {"isAdmin": true}}'
 
@@ -268,7 +268,7 @@ describe('Prototype Pollution Protection', () => {
     expect(Object.hasOwn(result, 'prototype')).toBe(false)
   })
 
-  it('works with custom reviver', () => {
+  test('works with custom reviver', () => {
     // Reviver that doubles numbers
     const reviver = (_key: string, value: unknown) => {
       if (typeof value === 'number') {
@@ -290,7 +290,7 @@ describe('Prototype Pollution Protection', () => {
     expect((Object.prototype as any).polluted).toBeUndefined()
   })
 
-  it('also filters nested dangerous keys', () => {
+  test('also filters nested dangerous keys', () => {
     const serializer = createJsonSerializer()
     const maliciousPayload =
       '{"data": {"nested": {"__proto__": {"polluted": true}}}}'

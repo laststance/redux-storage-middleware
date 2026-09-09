@@ -2,7 +2,7 @@
  * Debounce Utility Tests
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 
 import { debounce, debounceLeading } from '../../src/utils/debounce'
 
@@ -15,7 +15,7 @@ describe('debounce', () => {
     vi.useRealTimers()
   })
 
-  it('executes the function after the specified time', async () => {
+  test('executes the function after the specified time', async () => {
     const fn = vi.fn()
     const { debouncedFn } = debounce(fn, 100)
 
@@ -29,7 +29,7 @@ describe('debounce', () => {
     expect(fn).toHaveBeenCalledWith('arg1')
   })
 
-  it('consolidates consecutive calls into the last one', async () => {
+  test('consolidates consecutive calls into the last one', async () => {
     const fn = vi.fn()
     const { debouncedFn } = debounce(fn, 100)
 
@@ -43,7 +43,7 @@ describe('debounce', () => {
     expect(fn).toHaveBeenCalledWith('arg3')
   })
 
-  it('can cancel pending execution with cancel', async () => {
+  test('can cancel pending execution with cancel', async () => {
     const fn = vi.fn()
     const { debouncedFn, cancel } = debounce(fn, 100)
 
@@ -55,7 +55,7 @@ describe('debounce', () => {
     expect(fn).not.toHaveBeenCalled()
   })
 
-  it('does not throw error when calling cancel consecutively', () => {
+  test('does not throw error when calling cancel consecutively', () => {
     const fn = vi.fn()
     const { cancel } = debounce(fn, 100)
 
@@ -76,7 +76,7 @@ describe('debounceLeading', () => {
     vi.useRealTimers()
   })
 
-  it('executes immediately on the first call', async () => {
+  test('executes immediately on the first call', async () => {
     const fn = vi.fn()
     const { debouncedFn } = debounceLeading(fn, 100)
 
@@ -86,7 +86,7 @@ describe('debounceLeading', () => {
     expect(fn).toHaveBeenCalledWith('arg1')
   })
 
-  it('ignores calls within the debounce period', async () => {
+  test('ignores calls within the debounce period', async () => {
     const fn = vi.fn()
     const { debouncedFn } = debounceLeading(fn, 100)
 
@@ -98,7 +98,7 @@ describe('debounceLeading', () => {
     expect(fn).toHaveBeenCalledWith('arg1')
   })
 
-  it('can execute again after the debounce period', async () => {
+  test('can execute again after the debounce period', async () => {
     const fn = vi.fn()
     const { debouncedFn } = debounceLeading(fn, 100)
 
@@ -112,7 +112,7 @@ describe('debounceLeading', () => {
     expect(fn).toHaveBeenLastCalledWith('arg2')
   })
 
-  it('can reset timer and waiting state with cancel', async () => {
+  test('can reset timer and waiting state with cancel', async () => {
     const fn = vi.fn()
     const { debouncedFn, cancel } = debounceLeading(fn, 100)
 
