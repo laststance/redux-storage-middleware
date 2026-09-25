@@ -153,6 +153,50 @@ export function createMemoryStorage(): SyncStorage {
 }
 
 /**
+ * Minimal `react-native-mmkv` v4 surface used by {@link createMMKVStorage}
+ *
+ * The package does not depend on `react-native-mmkv`. Callers pass an
+ * instance that already has these methods.
+ */
+export interface MmkvStorageLike {
+  getString: (key: string) => string | undefined
+  set: (key: string, value: string) => void
+  remove: (key: string) => void
+}
+
+/**
+ * Adapts a `react-native-mmkv` v4 instance to {@link SyncStorage}
+ *
+ * Exists so React Native apps can pass MMKV without this package depending
+ * on `react-native-mmkv`. `getString` returns `undefined` for a missing key;
+ * storage backends in this package use `null`, so missing keys become `null`.
+ *
+ * Triggered only when application code calls it and passes the result as
+ * `storage` to {@link createStorageMiddleware}. v3 `delete` is intentionally
+ * ignored.
+ *
+ * @param mmkv - MMKV instance with `getString`, `set`, and `remove`
+ * @returns Sync storage backed by that instance
+ *
+ * @example
+ * ```ts
+ * const storage = createMMKVStorage(mmkv)
+ * createStorageMiddleware({ rootReducer, key: 'app', storage })
+ * ```
+ */
+export function createMMKVStorage(mmkv: MmkvStorageLike): SyncStorage {
+  return {
+    getItem: (name: string): string | null => mmkv.getString(name) ?? null,
+    setItem: (name: string, value: string): void => {
+      mmkv.set(name, value)
+    },
+    removeItem: (name: string): void => {
+      mmkv.remove(name)
+    },
+  }
+}
+
+/**
  * Converts sync storage to async storage
  *
  * @param storage - Sync storage

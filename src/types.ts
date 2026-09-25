@@ -216,10 +216,15 @@ export interface StorageMiddlewareConfig<S = unknown> {
    * Custom storage backend
    * Defaults to localStorage (SSR-safe)
    *
+   * Sync and async backends are both accepted. A thenable `getItem` /
+   * `setItem` / `removeItem` is awaited. When this is set, the middleware
+   * does not check `window`, so React Native can hydrate.
+   *
    * @example createSafeSessionStorage() // Use sessionStorage instead
    * @example createMemoryStorage() // Use in-memory storage for testing
+   * @example AsyncStorage // @react-native-async-storage/async-storage
    */
-  storage?: SyncStorage
+  storage?: StateStorage
 
   // ---------------------------------------------------------------------------
   // Serialization
@@ -374,9 +379,7 @@ export interface HydrateErrorAction {
  * Storage middleware related actions
  */
 export type StorageMiddlewareAction<T = unknown> =
-  | HydrateStartAction
-  | HydrateCompleteAction<T>
-  | HydrateErrorAction
+  HydrateStartAction | HydrateCompleteAction<T> | HydrateErrorAction
 
 // =============================================================================
 // Utility Types

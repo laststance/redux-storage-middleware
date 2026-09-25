@@ -110,16 +110,16 @@ Creates the storage middleware and returns both the middleware and a control API
 
 #### Configuration Options
 
-| Option        | Type                                                    | Default                    | Description                                         |
-| ------------- | ------------------------------------------------------- | -------------------------- | --------------------------------------------------- |
-| `rootReducer` | `Reducer<S, AnyAction>`                                 | **required**               | Root reducer to wrap with hydration                 |
-| `key`         | `string`                                                | **required**               | localStorage key                                    |
-| `slices`      | `(keyof S)[]`                                           | `undefined`                | State slices to persist (all if undefined)          |
-| `storage`     | `SyncStorage`                                           | `createSafeLocalStorage()` | Custom storage backend                              |
-| `serializer`  | `Serializer`                                            | `defaultJsonSerializer`    | Custom serializer for state persistence             |
-| `version`     | `number`                                                | `0`                        | Schema version — increment when state shape changes |
-| `migrate`     | `(state: Partial<S>, oldVersion: number) => Partial<S>` | `undefined`                | Migration function for version mismatches           |
-| `merge`       | `(persisted: Partial<S>, current: S) => S`              | shallow merge              | Custom merge strategy for hydration                 |
+| Option        | Type                                                    | Default                    | Description                                            |
+| ------------- | ------------------------------------------------------- | -------------------------- | ------------------------------------------------------ |
+| `rootReducer` | `Reducer<S, AnyAction>`                                 | **required**               | Root reducer to wrap with hydration                    |
+| `key`         | `string`                                                | **required**               | localStorage key                                       |
+| `slices`      | `(keyof S)[]`                                           | `undefined`                | State slices to persist (all if undefined)             |
+| `storage`     | `StateStorage`                                          | `createSafeLocalStorage()` | Sync or async backend. Custom storage ignores `window` |
+| `serializer`  | `Serializer`                                            | `defaultJsonSerializer`    | Custom serializer for state persistence                |
+| `version`     | `number`                                                | `0`                        | Schema version — increment when state shape changes    |
+| `migrate`     | `(state: Partial<S>, oldVersion: number) => Partial<S>` | `undefined`                | Migration function for version mismatches              |
+| `merge`       | `(persisted: Partial<S>, current: S) => S`              | shallow merge              | Custom merge strategy for hydration                    |
 
 #### Performance Options
 
@@ -201,6 +201,36 @@ import {
   getStorageSize, // Get item size in bytes
   getRemainingStorageQuota, // Estimate quota remaining
 } from '@laststance/redux-storage-middleware'
+```
+
+`loadStateFromStorage` and `clearStorageState` read `localStorage` directly. They are web-only. React Native should wait for middleware hydration instead of calling them.
+
+### React Native
+
+This package does not depend on `react-native`, AsyncStorage, or MMKV. Pass a storage instance. Do not dispatch until `onFinishHydration`. A dispatch during the read is overwritten by the persisted state.
+
+```typescript
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { createMMKV } from 'react-native-mmkv'
+import {
+  createMMKVStorage,
+  createStorageMiddleware,
+} from '@laststance/redux-storage-middleware'
+
+// AsyncStorage needs no adapter
+createStorageMiddleware({
+  rootReducer,
+  key: 'app',
+  storage: AsyncStorage,
+})
+
+// MMKV v4: getString / set / remove. Missing keys become null.
+const storage = createMMKVStorage(createMMKV())
+createStorageMiddleware({
+  rootReducer,
+  key: 'app',
+  storage,
+})
 ```
 
 ---
@@ -294,6 +324,9 @@ export function StoreProvider({ children }) {
   if (!hydrated) {
     return <LoadingSpinner />
   }
+
+  // Do not dispatch before onFinishHydration. Persisted state wins the merge,
+  // so an action during the read is overwritten when hydration finishes.
 
   return <Provider store={store}>{children}</Provider>
 }

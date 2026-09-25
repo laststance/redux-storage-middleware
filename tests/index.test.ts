@@ -21,6 +21,7 @@ import {
   createSafeSessionStorage,
   createNoopStorage,
   createMemoryStorage,
+  createMMKVStorage,
   toAsyncStorage,
   isValidStorage,
   getStorageSize,
@@ -94,6 +95,10 @@ describe('Package Exports', () => {
 
     test('exports createMemoryStorage', () => {
       expect(typeof createMemoryStorage).toBe('function')
+    })
+
+    test('exports createMMKVStorage', () => {
+      expect(typeof createMMKVStorage).toBe('function')
     })
 
     test('exports toAsyncStorage', () => {
