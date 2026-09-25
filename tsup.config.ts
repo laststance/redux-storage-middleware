@@ -3,7 +3,12 @@ import { defineConfig } from 'tsup'
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm', 'cjs'],
-  dts: true,
+  // tsup injects baseUrl, which TypeScript 7 rejects unless 6.0 deprecations are ignored.
+  dts: {
+    compilerOptions: {
+      ignoreDeprecations: '6.0',
+    },
+  },
   splitting: false,
   sourcemap: true,
   clean: true,
