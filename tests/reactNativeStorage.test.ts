@@ -466,6 +466,35 @@ describe('async custom storage', () => {
     expect(store.getState().test).toEqual({ value: 3, name: 'thenable' })
   })
 
+  test('reports an error when persisted state is an array', async () => {
+    // Arrange
+    const onFinish = vi.fn()
+    const storage: StateStorage = {
+      getItem: async () => JSON.stringify({ version: 0, state: ['note'] }),
+      setItem: async () => {},
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'array-state',
+      storage,
+      onHydrationComplete: onFinish,
+    })
+    configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    // Act
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(api.getHydrationState()).toBe('error')
+    expect(onFinish).toHaveBeenCalledTimes(1)
+  })
+
   test('reports an error when stored JSON is not an object', async () => {
     // Arrange
     const onFinish = vi.fn()

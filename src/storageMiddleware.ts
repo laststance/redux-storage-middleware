@@ -542,11 +542,18 @@ export function createStorageMiddleware<
       return Promise.resolve()
     }
 
+    const storedState =
+      persisted !== null &&
+      typeof persisted === 'object' &&
+      !Array.isArray(persisted) &&
+      'state' in persisted
+        ? persisted.state
+        : undefined
     if (
-      persisted === null ||
-      typeof persisted !== 'object' ||
-      Array.isArray(persisted) ||
-      !('state' in persisted)
+      storedState === undefined ||
+      storedState === null ||
+      typeof storedState !== 'object' ||
+      Array.isArray(storedState)
     ) {
       finishError(myGen, new Error('Stored value is not a persisted state'))
       return Promise.resolve()
