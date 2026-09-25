@@ -130,18 +130,42 @@ function NotesScreen() {
 }
 
 export default function App() {
-  const [ready, setReady] = useState(storageApi.hasHydrated())
+  const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>(
+    storageApi.hasHydrated() ? 'ready' : 'loading',
+  )
 
   useEffect(() => {
     return storageApi.onFinishHydration(() => {
-      setReady(true)
+      // Error still notifies, but edits would not be saved until a retry hydrates.
+      setPhase(
+        storageApi.getHydrationState() === 'hydrated' ? 'ready' : 'error',
+      )
     })
   }, [])
 
-  if (!ready) {
+  if (phase === 'loading') {
     return (
       <SafeAreaView style={styles.screen} testID="hydration-gate">
         <Text>Restoring notes…</Text>
+      </SafeAreaView>
+    )
+  }
+
+  if (phase === 'error') {
+    return (
+      <SafeAreaView style={styles.screen} testID="hydration-error">
+        <Text>Could not restore notes.</Text>
+        <Pressable
+          testID="retry-hydration"
+          accessibilityRole="button"
+          style={styles.primary}
+          onPress={() => {
+            setPhase('loading')
+            void storageApi.rehydrate()
+          }}
+        >
+          <Text style={styles.primaryLabel}>Try again</Text>
+        </Pressable>
       </SafeAreaView>
     )
   }
