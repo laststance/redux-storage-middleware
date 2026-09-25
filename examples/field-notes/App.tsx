@@ -1,6 +1,14 @@
 import { StatusBar } from 'expo-status-bar'
 import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
 import { Provider, useDispatch, useSelector } from 'react-redux'
 
 import {
@@ -21,7 +29,7 @@ function NotesScreen() {
   const dark = theme === 'dark'
 
   return (
-    <View
+    <SafeAreaView
       style={[styles.screen, dark ? styles.screenDark : styles.screenLight]}
       testID="notes-screen"
     >
@@ -54,10 +62,14 @@ function NotesScreen() {
       <Pressable
         testID="theme-toggle"
         accessibilityRole="button"
-        style={styles.secondary}
+        style={[styles.secondary, dark && styles.secondaryDark]}
         onPress={() => dispatch(toggleTheme())}
       >
-        <Text style={styles.secondaryLabel}>Toggle theme</Text>
+        <Text
+          style={[styles.secondaryLabel, dark && styles.secondaryLabelDark]}
+        >
+          Toggle theme
+        </Text>
       </Pressable>
       <Pressable
         testID="clear-storage"
@@ -76,34 +88,44 @@ function NotesScreen() {
       >
         {items.length}
       </Text>
-      {items.length === 0 ? (
-        <Text
-          testID="empty-notes"
-          style={dark ? styles.textLight : styles.textDark}
-        >
-          No notes yet
-        </Text>
-      ) : (
-        items.map((note) => (
-          <View key={note.id} style={styles.row} testID="note-row">
-            <Text
-              testID="note-text"
-              style={dark ? styles.textLight : styles.textDark}
-            >
-              {note.text}
-            </Text>
-            <Pressable
-              testID="delete-note"
-              accessibilityRole="button"
-              onPress={() => dispatch(deleteNote(note.id))}
-            >
-              <Text style={styles.deleteLabel}>Delete</Text>
-            </Pressable>
-          </View>
-        ))
-      )}
+      <ScrollView contentContainerStyle={styles.list}>
+        {items.length === 0 ? (
+          <Text
+            testID="empty-notes"
+            style={dark ? styles.textLight : styles.textDark}
+          >
+            No notes yet
+          </Text>
+        ) : (
+          items.map((note) => (
+            <View key={note.id} style={styles.row} testID="note-row">
+              <Text
+                testID="note-text"
+                style={[
+                  styles.noteText,
+                  dark ? styles.textLight : styles.textDark,
+                ]}
+              >
+                {note.text}
+              </Text>
+              <Pressable
+                testID="delete-note"
+                accessibilityRole="button"
+                style={styles.deleteButton}
+                onPress={() => dispatch(deleteNote(note.id))}
+              >
+                <Text
+                  style={[styles.deleteLabel, dark && styles.deleteLabelDark]}
+                >
+                  Delete
+                </Text>
+              </Pressable>
+            </View>
+          ))
+        )}
+      </ScrollView>
       <StatusBar style={dark ? 'light' : 'dark'} />
-    </View>
+    </SafeAreaView>
   )
 }
 
@@ -118,9 +140,9 @@ export default function App() {
 
   if (!ready) {
     return (
-      <View style={styles.screen} testID="hydration-gate">
+      <SafeAreaView style={styles.screen} testID="hydration-gate">
         <Text>Restoring notes…</Text>
-      </View>
+      </SafeAreaView>
     )
   }
 
@@ -182,15 +204,25 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
   },
+  secondaryDark: {
+    borderColor: '#5eead4',
+  },
   secondaryLabel: {
     color: '#0f766e',
     textAlign: 'center',
     fontWeight: '600',
   },
+  secondaryLabelDark: {
+    color: '#5eead4',
+  },
   danger: {
     backgroundColor: '#b91c1c',
     borderRadius: 8,
     padding: 12,
+  },
+  list: {
+    gap: 12,
+    paddingBottom: 24,
   },
   row: {
     flexDirection: 'row',
@@ -198,8 +230,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  noteText: {
+    flex: 1,
+    flexShrink: 1,
+  },
+  deleteButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
   deleteLabel: {
     color: '#b91c1c',
     fontWeight: '600',
+  },
+  deleteLabelDark: {
+    color: '#fca5a5',
   },
 })

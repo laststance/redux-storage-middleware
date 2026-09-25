@@ -707,7 +707,7 @@ export function createStorageMiddleware<
     onFinishHydration: (callback: (state: S) => void): (() => void) => {
       finishHydrationCallbacks.add(callback)
 
-      // Call callback immediately if hydration is already complete
+      // Settled means hydrated, error, or a read aborted by clearStorage.
       if (hydrationSettled) {
         callback(callbackState(hydratedState))
       }

@@ -429,6 +429,119 @@ describe('async custom storage', () => {
     expect(api.hasHydrated()).toBe(true)
     expect(onFinish).toHaveBeenCalledTimes(1)
   })
+
+  test('hydrates from a thenable that is not a Promise', async () => {
+    // Arrange
+    let fulfill: (value: string | null) => void = () => {}
+    const read = {
+      then(onFulfilled: (value: string | null) => void) {
+        fulfill = onFulfilled
+      },
+    }
+    const storage: StateStorage = {
+      getItem: () => read as unknown as Promise<string | null>,
+      setItem: async () => {},
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'plain-thenable',
+      storage,
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    // Act
+    await vi.advanceTimersByTimeAsync(0)
+    expect(api.hasHydrated()).toBe(false)
+    fulfill(persisted(3, 'thenable'))
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(api.hasHydrated()).toBe(true)
+    expect(store.getState().test).toEqual({ value: 3, name: 'thenable' })
+  })
+
+  test('reports an error when getItem rejects', async () => {
+    // Arrange
+    const onError = vi.fn()
+    const onFinish = vi.fn()
+    const storage: StateStorage = {
+      getItem: async () => {
+        throw new Error('read failed')
+      },
+      setItem: async () => {},
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'read-reject',
+      storage,
+      onError,
+      onHydrationComplete: onFinish,
+    })
+    configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    // Act
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(api.getHydrationState()).toBe('error')
+    expect(api.hasHydrated()).toBe(false)
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'read failed' }),
+      'load',
+    )
+    expect(onFinish).toHaveBeenCalledTimes(1)
+  })
+
+  test('reports a save error when setItem rejects after hydration', async () => {
+    // Arrange
+    const onError = vi.fn()
+    const onSaveComplete = vi.fn()
+    const storage: StateStorage = {
+      getItem: async () => null,
+      setItem: async () => {
+        throw new Error('save failed')
+      },
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer } = createStorageMiddleware({
+      rootReducer,
+      key: 'save-reject',
+      storage,
+      onError,
+      onSaveComplete,
+      performance: { debounceMs: 0 },
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Act
+    store.dispatch(testSlice.actions.setName('later'))
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(onSaveComplete).not.toHaveBeenCalled()
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'save failed' }),
+      'save',
+    )
+  })
 })
 
 describe('createMMKVStorage', () => {
