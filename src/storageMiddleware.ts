@@ -542,6 +542,16 @@ export function createStorageMiddleware<
       return Promise.resolve()
     }
 
+    if (
+      persisted === null ||
+      typeof persisted !== 'object' ||
+      Array.isArray(persisted) ||
+      !('state' in persisted)
+    ) {
+      finishError(myGen, new Error('Stored value is not a persisted state'))
+      return Promise.resolve()
+    }
+
     const storedVersion = persisted.version ?? 0
     let state = persisted.state
 
@@ -627,7 +637,11 @@ export function createStorageMiddleware<
           if (myGen !== generation) {
             return
           }
-          return applyLoaded(myGen, serialized)
+          try {
+            await applyLoaded(myGen, serialized)
+          } catch (error) {
+            finishError(myGen, error)
+          }
         },
         (error: unknown) => {
           finishError(myGen, error)

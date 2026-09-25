@@ -466,6 +466,36 @@ describe('async custom storage', () => {
     expect(store.getState().test).toEqual({ value: 3, name: 'thenable' })
   })
 
+  test('reports an error when stored JSON is not an object', async () => {
+    // Arrange
+    const onFinish = vi.fn()
+    const storage: StateStorage = {
+      getItem: async () => 'null',
+      setItem: async () => {},
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'bad-shape',
+      storage,
+      onHydrationComplete: onFinish,
+    })
+    configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+
+    // Act
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(api.getHydrationState()).toBe('error')
+    expect(api.hasHydrated()).toBe(false)
+    expect(onFinish).toHaveBeenCalledTimes(1)
+  })
+
   test('reports an error when getItem rejects', async () => {
     // Arrange
     const onError = vi.fn()
