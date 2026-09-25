@@ -340,13 +340,13 @@ export function createStorageMiddleware<
       const { scheduledFn } = scheduleIdleCallback(saveToStorage, {
         timeout: idleTimeout,
       })
-      saveHandler = scheduledFn as (state: S) => void
+      saveHandler = scheduledFn
     } else if (throttleMs) {
       const { throttledFn } = throttle(saveToStorage, throttleMs)
-      saveHandler = throttledFn as (state: S) => void
+      saveHandler = throttledFn
     } else {
       const { debouncedFn } = debounce(saveToStorage, debounceMs)
-      saveHandler = debouncedFn as (state: S) => void
+      saveHandler = debouncedFn
     }
   }
 
@@ -380,7 +380,7 @@ export function createStorageMiddleware<
 
         // Version check
         const storedVersion = persisted.version ?? 0
-        let state = persisted.state as Partial<S>
+        let state = persisted.state
 
         if (storedVersion !== configVersion) {
           if (migrate) {
@@ -420,13 +420,13 @@ export function createStorageMiddleware<
         // Merge with current state using configured merge strategy
         if (storeApi) {
           const currentState = storeApi.getState()
-          hydratedState = mergeFn(state as Partial<S>, currentState)
+          hydratedState = mergeFn(state, currentState)
 
           // Update store (dispatch hydration action)
           storeApi.dispatch({
             type: ACTION_HYDRATE_COMPLETE,
             payload: hydratedState,
-          } as UnknownAction)
+          })
         } else {
           hydratedState = state as S
         }
@@ -475,7 +475,7 @@ export function createStorageMiddleware<
 
     onHydrate: (callback: (state: S) => void): (() => void) => {
       hydrateCallbacks.add(callback)
-      return () => {
+      return (): void => {
         hydrateCallbacks.delete(callback)
       }
     },
@@ -488,7 +488,7 @@ export function createStorageMiddleware<
         callback(hydratedState)
       }
 
-      return () => {
+      return (): void => {
         finishHydrationCallbacks.delete(callback)
       }
     },
@@ -499,7 +499,7 @@ export function createStorageMiddleware<
   // ---------------------------------------------------------------------------
 
   const middleware: Middleware<object, S> = (store) => {
-    storeApi = store as MiddlewareAPI<Dispatch<UnknownAction>, S>
+    storeApi = store
 
     // Automatic hydration (always enabled on client)
     if (!isServer()) {

@@ -44,7 +44,7 @@ export function createJsonSerializer<T = unknown>(
             state,
             function (this: any, key: string, value: unknown) {
               // Access original object via this[key] (for Date, value is already ISO string)
-              const originalValue = key ? (this as any)[key] : value
+              const originalValue = key ? this[key] : value
 
               return replacer(key, originalValue)
             },

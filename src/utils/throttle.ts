@@ -97,12 +97,12 @@ export function scheduleIdleCallback<Args extends unknown[]>(
     typeof requestIdleCallback !== 'undefined'
       ? requestIdleCallback
       : (cb: () => void, _opts?: IdleRequestOptions) =>
-          setTimeout(cb, IDLE_CALLBACK_FALLBACK_MS) as unknown as number
+          setTimeout(cb, IDLE_CALLBACK_FALLBACK_MS)
 
   const cancelIdle =
     typeof cancelIdleCallback !== 'undefined'
       ? cancelIdleCallback
-      : (id: number) => clearTimeout(id)
+      : (id: number): void => clearTimeout(id)
 
   const scheduledFn = (...args: Args): void => {
     pendingArgs = args
