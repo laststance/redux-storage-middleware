@@ -601,6 +601,41 @@ describe('async custom storage', () => {
       'save',
     )
   })
+
+  test('does not report a save error after clearStorage supersedes that write', async () => {
+    // Arrange
+    const write = deferred<void>()
+    const onError = vi.fn()
+    const storage: StateStorage = {
+      getItem: async () => null,
+      setItem: () => write.promise,
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'stale-save-error',
+      storage,
+      onError,
+      performance: { debounceMs: 0 },
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+    await vi.advanceTimersByTimeAsync(0)
+    store.dispatch(testSlice.actions.setName('later'))
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Act
+    api.clearStorage()
+    write.reject(new Error('save failed'))
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(onError).not.toHaveBeenCalled()
+  })
 })
 
 describe('createMMKVStorage', () => {

@@ -404,6 +404,9 @@ export function createStorageMiddleware<
               }
             },
             (error: unknown) => {
+              if (scheduledGen !== generation) {
+                return
+              }
               console.error(
                 '[redux-storage-middleware] Failed to save state:',
                 error,
