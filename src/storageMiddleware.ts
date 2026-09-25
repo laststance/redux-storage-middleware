@@ -37,6 +37,20 @@ const ACTION_HYDRATE_ERROR = '@@redux-storage-middleware/HYDRATE_ERROR'
 const DEFAULT_DEBOUNCE_MS = 300
 
 /**
+ * Promise detection for storage backends that are not native Promises.
+ *
+ * React Native storage often returns a thenable. `instanceof Promise` misses
+ * those and would persist the thenable object itself.
+ */
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return (
+    (typeof value === 'object' || typeof value === 'function') &&
+    value !== null &&
+    typeof (value as PromiseLike<unknown>).then === 'function'
+  )
+}
+
+/**
  * Minimum and maximum length for storage keys
  */
 const MIN_STORAGE_KEY_LENGTH = 1
@@ -254,8 +268,84 @@ export function createStorageMiddleware<
   // Storage Setup
   // ---------------------------------------------------------------------------
 
-  // Get SSR-safe storage (custom or localStorage, created once)
+  // Custom storage skips the window check so React Native can hydrate.
+  // Default localStorage still noops when window is missing.
+  const usesDefaultWebStorage = customStorage === undefined
   const storage = customStorage ?? createSafeLocalStorage()
+  const skipWebSsr = (): boolean => usesDefaultWebStorage && isServer()
+
+  // Generation-numbered serial queue. A late getItem whose generation no
+  // longer matches does not hydrate. Sync jobs run inline when the queue is idle.
+  let generation = 0
+  let ioChain: Promise<void> = Promise.resolve()
+  let ioBusy = false
+  let inflightRehydrate: Promise<void> | null = null
+  let cancelScheduledSave: (() => void) | null = null
+  let hydrationSettled = false
+
+  const enqueue = async <T>(job: () => T | PromiseLike<T>): Promise<T> => {
+    const track = async (scheduled: Promise<T>): Promise<T> => {
+      const settled = scheduled.then(
+        () => undefined,
+        () => undefined,
+      )
+      ioBusy = true
+      ioChain = settled
+      void settled.then(() => {
+        if (ioChain === settled) {
+          ioBusy = false
+        }
+      })
+      return scheduled
+    }
+
+    if (!ioBusy) {
+      try {
+        const result = job()
+        if (!isThenable(result)) {
+          return Promise.resolve(result)
+        }
+        return track(Promise.resolve(result))
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    }
+
+    return track(ioChain.then(() => job()))
+  }
+
+  const callbackState = (override: S | null): S =>
+    override ?? storeApi?.getState() ?? ({} as S)
+
+  const notifySettled = (stateForCallback: S): void => {
+    hydrationSettled = true
+    onHydrationComplete?.(stateForCallback)
+    for (const callback of finishHydrationCallbacks) {
+      callback(stateForCallback)
+    }
+  }
+
+  const finishHydrated = (myGen: number, next: S | null): boolean => {
+    if (myGen !== generation) {
+      return false
+    }
+    hydrationState = 'hydrated'
+    hydratedState = next
+    notifySettled(callbackState(next))
+    return true
+  }
+
+  const finishError = (myGen: number, error: unknown): boolean => {
+    if (myGen !== generation) {
+      return false
+    }
+    console.error('[redux-storage-middleware] Hydration failed:', error)
+    hydrationState = 'error'
+    hydratedState = null
+    onError?.(error as Error, 'load')
+    notifySettled(callbackState(null))
+    return true
+  }
 
   // ---------------------------------------------------------------------------
   // Serialization
@@ -281,52 +371,221 @@ export function createStorageMiddleware<
   }
 
   /**
-   * Saves to storage
+   * Saves to storage.
+   *
+   * Sync setItem calls onSaveComplete before this function returns when the
+   * queue is idle. A thenable setItem calls it only after that write settles.
+   * A generation change (clearStorage) drops the write.
    */
   const saveToStorage = (state: S): void => {
-    if (isServer()) {
+    if (skipWebSsr()) {
       return
     }
 
-    try {
-      const stateToSave = extractStateToSave(state)
-
-      const persistedState: PersistedState<Partial<S>> = {
-        version: configVersion,
-        state: stateToSave,
+    const scheduledGen = generation
+    void enqueue(async () => {
+      if (scheduledGen !== generation) {
+        return
       }
 
-      const serialized = serializer.serialize(persistedState)
-      storage.setItem(key, serialized)
-
-      onSaveComplete?.(state)
-    } catch (error) {
-      console.error('[redux-storage-middleware] Failed to save state:', error)
-      onError?.(error as Error, 'save')
-    }
+      try {
+        const stateToSave = extractStateToSave(state)
+        const persistedState: PersistedState<Partial<S>> = {
+          version: configVersion,
+          state: stateToSave,
+        }
+        const serialized = serializer.serialize(persistedState)
+        const written = storage.setItem(key, serialized)
+        if (isThenable(written)) {
+          return Promise.resolve(written).then(
+            () => {
+              if (scheduledGen === generation) {
+                onSaveComplete?.(state)
+              }
+            },
+            (error: unknown) => {
+              if (scheduledGen !== generation) {
+                return
+              }
+              console.error(
+                '[redux-storage-middleware] Failed to save state:',
+                error,
+              )
+              onError?.(error as Error, 'save')
+            },
+          )
+        }
+        onSaveComplete?.(state)
+      } catch (error) {
+        console.error('[redux-storage-middleware] Failed to save state:', error)
+        onError?.(error as Error, 'save')
+      }
+    })
   }
 
-  /**
-   * Loads from storage
-   */
-  const loadFromStorage = (): PersistedState<Partial<S>> | null => {
-    if (isServer()) {
-      return null
+  const commitMerge = (myGen: number, state: Partial<S>): void => {
+    if (myGen !== generation) {
+      return
+    }
+    if (storeApi) {
+      const currentState = storeApi.getState()
+      hydratedState = mergeFn(state, currentState)
+      storeApi.dispatch({
+        type: ACTION_HYDRATE_COMPLETE,
+        payload: hydratedState,
+      })
+    } else {
+      hydratedState = state as S
+    }
+    hydrationState = 'hydrated'
+    notifySettled(callbackState(hydratedState))
+  }
+
+  const removeStored = async (myGen: number): Promise<void> =>
+    enqueue(async () => {
+      if (myGen !== generation) {
+        return
+      }
+      try {
+        const removed = storage.removeItem(key)
+        if (isThenable(removed)) {
+          return Promise.resolve(removed).then(
+            () => {
+              finishHydrated(myGen, null)
+            },
+            (error: unknown) => {
+              finishError(myGen, error)
+            },
+          )
+        }
+        finishHydrated(myGen, null)
+      } catch (error) {
+        finishError(myGen, error)
+      }
+    })
+
+  const writeMigrated = async (
+    myGen: number,
+    state: Partial<S>,
+  ): Promise<void> => {
+    let serialized: string
+    try {
+      serialized = serializer.serialize({
+        version: configVersion,
+        state,
+      })
+    } catch (error) {
+      finishError(myGen, error)
+      return Promise.resolve()
     }
 
-    try {
-      const serialized = storage.getItem(key)
-
-      if (serialized === null) {
-        return null
+    return enqueue(async () => {
+      if (myGen !== generation) {
+        return
       }
+      try {
+        const written = storage.setItem(key, serialized)
+        if (isThenable(written)) {
+          return Promise.resolve(written).then(
+            () => {
+              commitMerge(myGen, state)
+            },
+            (error: unknown) => {
+              if (myGen !== generation) {
+                return
+              }
+              console.error(
+                '[redux-storage-middleware] Failed to save migrated state:',
+                error,
+              )
+              hydrationState = 'error'
+              hydratedState = null
+              onError?.(error as Error, 'save')
+              notifySettled(callbackState(null))
+            },
+          )
+        }
+        commitMerge(myGen, state)
+      } catch (error) {
+        if (myGen !== generation) {
+          return
+        }
+        console.error(
+          '[redux-storage-middleware] Failed to save migrated state:',
+          error,
+        )
+        hydrationState = 'error'
+        hydratedState = null
+        onError?.(error as Error, 'save')
+        notifySettled(callbackState(null))
+      }
+    })
+  }
 
-      return serializer.deserialize(serialized) as PersistedState<Partial<S>>
+  const applyLoaded = async (
+    myGen: number,
+    serialized: string | null,
+  ): Promise<void> => {
+    if (myGen !== generation) {
+      return Promise.resolve()
+    }
+    if (serialized === null) {
+      finishHydrated(myGen, null)
+      return Promise.resolve()
+    }
+
+    let persisted: PersistedState<Partial<S>>
+    try {
+      persisted = serializer.deserialize(serialized) as PersistedState<
+        Partial<S>
+      >
     } catch (error) {
       console.error('[redux-storage-middleware] Failed to load state:', error)
-      onError?.(error as Error, 'load')
-      return null
+      finishError(myGen, error)
+      return Promise.resolve()
     }
+
+    const storedState =
+      persisted !== null &&
+      typeof persisted === 'object' &&
+      !Array.isArray(persisted) &&
+      'state' in persisted
+        ? persisted.state
+        : undefined
+    if (
+      storedState === undefined ||
+      storedState === null ||
+      typeof storedState !== 'object' ||
+      Array.isArray(storedState)
+    ) {
+      finishError(myGen, new Error('Stored value is not a persisted state'))
+      return Promise.resolve()
+    }
+
+    const storedVersion = persisted.version ?? 0
+    let state = persisted.state
+
+    if (storedVersion !== configVersion) {
+      if (migrate) {
+        try {
+          state = migrate(state, storedVersion)
+        } catch (error) {
+          console.error('[redux-storage-middleware] Migration failed:', error)
+          onError?.(error as Error, 'load')
+          return removeStored(myGen)
+        }
+        return writeMigrated(myGen, state)
+      }
+
+      console.warn(
+        `[redux-storage-middleware] Version mismatch (stored: ${storedVersion}, config: ${configVersion}). ` +
+          'No migrate function provided. Clearing storage.',
+      )
+      return removeStored(myGen)
+    }
+
+    commitMerge(myGen, state)
+    return Promise.resolve()
   }
 
   // ---------------------------------------------------------------------------
@@ -337,16 +596,19 @@ export function createStorageMiddleware<
 
   const setupSaveHandler = (): void => {
     if (useIdleCallback) {
-      const { scheduledFn } = scheduleIdleCallback(saveToStorage, {
+      const { scheduledFn, cancel } = scheduleIdleCallback(saveToStorage, {
         timeout: idleTimeout,
       })
       saveHandler = scheduledFn
+      cancelScheduledSave = cancel
     } else if (throttleMs) {
-      const { throttledFn } = throttle(saveToStorage, throttleMs)
+      const { throttledFn, cancel } = throttle(saveToStorage, throttleMs)
       saveHandler = throttledFn
+      cancelScheduledSave = cancel
     } else {
-      const { debouncedFn } = debounce(saveToStorage, debounceMs)
+      const { debouncedFn, cancel } = debounce(saveToStorage, debounceMs)
       saveHandler = debouncedFn
+      cancelScheduledSave = cancel
     }
   }
 
@@ -358,91 +620,50 @@ export function createStorageMiddleware<
 
   const api: HydrationApi<S> = {
     rehydrate: async (): Promise<void> => {
-      if (hydrationState === 'hydrating') {
-        return
+      // A second call waits for the read already in flight.
+      if (hydrationState === 'hydrating' && inflightRehydrate) {
+        return inflightRehydrate
       }
 
-      hydrationState = 'hydrating'
+      if (skipWebSsr()) {
+        return Promise.resolve()
+      }
 
-      // Notify callbacks
+      const myGen = ++generation
+      hydrationState = 'hydrating'
+      hydrationSettled = false
+
       for (const callback of hydrateCallbacks) {
         callback(storeApi?.getState() as S)
       }
 
-      try {
-        const persisted = loadFromStorage()
-
-        if (persisted === null) {
-          hydrationState = 'hydrated'
-          hydratedState = null
-          return
+      const run = enqueue(async () => {
+        if (myGen !== generation) {
+          return null
         }
-
-        // Version check
-        const storedVersion = persisted.version ?? 0
-        let state = persisted.state
-
-        if (storedVersion !== configVersion) {
-          if (migrate) {
-            try {
-              state = migrate(state, storedVersion)
-              // Save migrated state so next load skips migration
-              const migratedPersisted: PersistedState<Partial<S>> = {
-                version: configVersion,
-                state,
-              }
-              const serialized = serializer.serialize(migratedPersisted)
-              storage.setItem(key, serialized)
-            } catch (error) {
-              console.error(
-                '[redux-storage-middleware] Migration failed:',
-                error,
-              )
-              onError?.(error as Error, 'load')
-              storage.removeItem(key)
-              hydrationState = 'hydrated'
-              hydratedState = null
-              return
-            }
-          } else {
-            // No migrate function — clear storage (safe default)
-            console.warn(
-              `[redux-storage-middleware] Version mismatch (stored: ${storedVersion}, config: ${configVersion}). ` +
-                'No migrate function provided. Clearing storage.',
-            )
-            storage.removeItem(key)
-            hydrationState = 'hydrated'
-            hydratedState = null
+        return storage.getItem(key)
+      }).then(
+        async (serialized) => {
+          if (myGen !== generation) {
             return
           }
+          try {
+            await applyLoaded(myGen, serialized)
+          } catch (error) {
+            finishError(myGen, error)
+          }
+        },
+        (error: unknown) => {
+          finishError(myGen, error)
+        },
+      )
+
+      inflightRehydrate = run.finally(() => {
+        if (inflightRehydrate === run) {
+          inflightRehydrate = null
         }
-
-        // Merge with current state using configured merge strategy
-        if (storeApi) {
-          const currentState = storeApi.getState()
-          hydratedState = mergeFn(state, currentState)
-
-          // Update store (dispatch hydration action)
-          storeApi.dispatch({
-            type: ACTION_HYDRATE_COMPLETE,
-            payload: hydratedState,
-          })
-        } else {
-          hydratedState = state as S
-        }
-
-        hydrationState = 'hydrated'
-        onHydrationComplete?.(hydratedState)
-
-        // Notify completion callbacks
-        for (const callback of finishHydrationCallbacks) {
-          callback(hydratedState)
-        }
-      } catch (error) {
-        console.error('[redux-storage-middleware] Hydration failed:', error)
-        hydrationState = 'error'
-        onError?.(error as Error, 'load')
-      }
+      })
+      return inflightRehydrate
     },
 
     hasHydrated: (): boolean => {
@@ -458,19 +679,46 @@ export function createStorageMiddleware<
     },
 
     clearStorage: (): void => {
-      if (isServer()) {
+      if (skipWebSsr()) {
         return
       }
 
-      try {
-        storage.removeItem(key)
-      } catch (error) {
-        console.error(
-          '[redux-storage-middleware] Failed to clear storage:',
-          error,
-        )
-        onError?.(error as Error, 'clear')
+      // Drop a debounced/throttled/idle save so it cannot write deleted state back.
+      cancelScheduledSave?.()
+      const wasHydrating = hydrationState === 'hydrating'
+      generation += 1
+
+      // The in-flight getItem sees the new generation and must not hydrate.
+      // This call owns the terminal state for that aborted read.
+      if (wasHydrating) {
+        hydrationState = 'hydrated'
+        hydratedState = null
+        notifySettled(callbackState(null))
       }
+
+      void enqueue(async () => {
+        try {
+          const removed = storage.removeItem(key)
+          if (isThenable(removed)) {
+            return Promise.resolve(removed).then(
+              () => undefined,
+              (error: unknown) => {
+                console.error(
+                  '[redux-storage-middleware] Failed to clear storage:',
+                  error,
+                )
+                onError?.(error as Error, 'clear')
+              },
+            )
+          }
+        } catch (error) {
+          console.error(
+            '[redux-storage-middleware] Failed to clear storage:',
+            error,
+          )
+          onError?.(error as Error, 'clear')
+        }
+      })
     },
 
     onHydrate: (callback: (state: S) => void): (() => void) => {
@@ -483,9 +731,9 @@ export function createStorageMiddleware<
     onFinishHydration: (callback: (state: S) => void): (() => void) => {
       finishHydrationCallbacks.add(callback)
 
-      // Call callback immediately if hydration is already complete
-      if (hydrationState === 'hydrated' && hydratedState) {
-        callback(hydratedState)
+      // Settled means hydrated, error, or a read aborted by clearStorage.
+      if (hydrationSettled) {
+        callback(callbackState(hydratedState))
       }
 
       return (): void => {
@@ -501,11 +749,11 @@ export function createStorageMiddleware<
   const middleware: Middleware<object, S> = (store) => {
     storeApi = store
 
-    // Automatic hydration (always enabled on client)
-    if (!isServer()) {
+    // Default web storage still skips SSR. Custom storage hydrates without window.
+    if (!skipWebSsr()) {
       // Execute in microtask (after store initialization)
       Promise.resolve().then(() => {
-        api.rehydrate()
+        void api.rehydrate()
       })
     }
 

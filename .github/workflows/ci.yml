@@ -100,3 +100,23 @@ jobs:
           name: playwright-report
           path: examples/gmail-clone/playwright-report/
           retention-days: 7
+
+      - name: Install field-notes dependencies
+        run: pnpm install --ignore-workspace
+        working-directory: examples/field-notes
+
+      - name: Install Playwright browsers for field-notes
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: examples/field-notes
+
+      - name: Run field-notes E2E
+        run: pnpm test:e2e
+        working-directory: examples/field-notes
+
+      - name: Upload field-notes Playwright Report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: field-notes-playwright-report
+          path: examples/field-notes/playwright-report/
+          retention-days: 7
