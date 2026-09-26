@@ -108,6 +108,102 @@ describe('scheduleIdleCallback', () => {
     expect(fn).toHaveBeenCalledWith('arg3')
   })
 
+  test('a sync reschedule from the idle callback still runs', () => {
+    // Arrange — own the idle queue so the reschedule cannot run early
+    const jobs = new Map<number, () => void>()
+    let nextId = 1
+    vi.stubGlobal(
+      'requestIdleCallback',
+      (callback: IdleRequestCallback): number => {
+        const id = nextId
+        nextId += 1
+        jobs.set(id, () => {
+          callback({
+            didTimeout: false,
+            timeRemaining: () => 50,
+          })
+        })
+        return id
+      },
+    )
+    vi.stubGlobal('cancelIdleCallback', (id: number): void => {
+      jobs.delete(id)
+    })
+
+    try {
+      let calls = 0
+      const { scheduledFn } = scheduleIdleCallback(() => {
+        calls += 1
+        if (calls === 1) {
+          scheduledFn()
+        }
+      })
+      scheduledFn()
+
+      // Act
+      const first = jobs.get(1)
+      jobs.delete(1)
+      first?.()
+      for (const job of jobs.values()) {
+        job()
+      }
+
+      // Assert — clearing the handle after the callback would drop this save
+      expect(calls).toBe(2)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  test('cancel stops a callback that the running idle task scheduled', () => {
+    // Arrange — own the idle queue so the reschedule cannot run before cancel
+    const jobs = new Map<number, () => void>()
+    let nextId = 1
+    vi.stubGlobal(
+      'requestIdleCallback',
+      (callback: IdleRequestCallback): number => {
+        const id = nextId
+        nextId += 1
+        jobs.set(id, () => {
+          callback({
+            didTimeout: false,
+            timeRemaining: () => 50,
+          })
+        })
+        return id
+      },
+    )
+    vi.stubGlobal('cancelIdleCallback', (id: number): void => {
+      jobs.delete(id)
+    })
+
+    try {
+      let calls = 0
+      const { scheduledFn, cancel } = scheduleIdleCallback(() => {
+        calls += 1
+        if (calls === 1) {
+          scheduledFn()
+        }
+      })
+      scheduledFn()
+
+      // Act
+      const first = jobs.get(1)
+      jobs.delete(1)
+      first?.()
+      cancel()
+      for (const job of jobs.values()) {
+        job()
+      }
+
+      // Assert
+      expect(jobs.size).toBe(0)
+      expect(calls).toBe(1)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   test('can cancel pending execution with cancel', async () => {
     const fn = vi.fn()
     const { scheduledFn, cancel } = scheduleIdleCallback(fn)

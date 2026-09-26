@@ -141,9 +141,11 @@ describe('async custom storage', () => {
     // Arrange
     const write = deferred<void>()
     let writeStarted = false
+    let written = ''
     const storage: StateStorage = {
       getItem: async () => persisted(1, 'old', 0),
-      setItem: () => {
+      setItem: (_key, value) => {
+        written = value
         writeStarted = true
         return write.promise
       },
@@ -178,6 +180,10 @@ describe('async custom storage', () => {
 
     expect(api.hasHydrated()).toBe(true)
     expect(store.getState().test.name).toBe('migrated')
+    expect(JSON.parse(written)).toEqual({
+      version: 1,
+      state: { test: { value: 1, name: 'migrated' } },
+    })
   })
 
   test('calls async onSaveComplete only after setItem resolves', async () => {
@@ -273,7 +279,7 @@ describe('async custom storage', () => {
       onError,
       onHydrationComplete: onFinish,
     })
-    configureStore({
+    const store = configureStore({
       reducer,
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(middleware),
@@ -283,6 +289,7 @@ describe('async custom storage', () => {
     await vi.advanceTimersByTimeAsync(0)
 
     // Assert
+    expect(store.getState().test).toEqual({ value: 0, name: 'initial' })
     expect(removed).toBe(false)
     expect(api.getHydrationState()).toBe('error')
     expect(api.hasHydrated()).toBe(false)
@@ -358,8 +365,12 @@ describe('async custom storage', () => {
   test('second rehydrate waits for the in-flight read', async () => {
     // Arrange
     const read = deferred<string | null>()
+    let reads = 0
     const storage: StateStorage = {
-      getItem: () => read.promise,
+      getItem: () => {
+        reads += 1
+        return read.promise
+      },
       setItem: async () => {},
       removeItem: async () => {},
     }
@@ -378,11 +389,15 @@ describe('async custom storage', () => {
     let secondResolved = false
 
     // Act
-    const second = api.rehydrate().then(() => {
+    const second = api.rehydrate()
+    const third = api.rehydrate()
+    void second.then(() => {
       secondResolved = true
     })
     await vi.advanceTimersByTimeAsync(0)
     expect(secondResolved).toBe(false)
+    expect(third).toBe(second)
+    expect(reads).toBe(1)
 
     read.resolve(persisted(6, 'shared'))
     await second
@@ -481,7 +496,7 @@ describe('async custom storage', () => {
       storage,
       onHydrationComplete: onFinish,
     })
-    configureStore({
+    const store = configureStore({
       reducer,
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(middleware),
@@ -492,6 +507,8 @@ describe('async custom storage', () => {
 
     // Assert
     expect(api.getHydrationState()).toBe('error')
+    expect(api.hasHydrated()).toBe(false)
+    expect(store.getState().test).toEqual({ value: 0, name: 'initial' })
     expect(onFinish).toHaveBeenCalledTimes(1)
   })
 
@@ -636,6 +653,211 @@ describe('async custom storage', () => {
     // Assert
     expect(onError).not.toHaveBeenCalled()
   })
+
+  test('keeps the initial store when persisted state is null or missing', async () => {
+    // Arrange
+    const payloads = [
+      JSON.stringify({ version: 0, state: null }),
+      JSON.stringify({ version: 0 }),
+    ]
+    for (const payload of payloads) {
+      const storage: StateStorage = {
+        getItem: async () => payload,
+        setItem: async () => {},
+        removeItem: async () => {},
+      }
+      const rootReducer = combineReducers({ test: testSlice.reducer })
+      const { middleware, reducer, api } = createStorageMiddleware({
+        rootReducer,
+        key: `bad-state-${payload.length}`,
+        storage,
+      })
+      const store = configureStore({
+        reducer,
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware().concat(middleware),
+      })
+
+      // Act
+      await vi.advanceTimersByTimeAsync(0)
+
+      // Assert
+      expect(api.getHydrationState()).toBe('error')
+      expect(api.hasHydrated()).toBe(false)
+      expect(store.getState().test).toEqual({ value: 0, name: 'initial' })
+    }
+  })
+
+  test('rehydrate after clearStorage ignores the aborted payload', async () => {
+    // Arrange
+    const first = deferred<string | null>()
+    const second = deferred<string | null>()
+    let reads = 0
+    const storage: StateStorage = {
+      getItem: () => {
+        reads += 1
+        return reads === 1 ? first.promise : second.promise
+      },
+      setItem: async () => {},
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'clear-then-rehydrate',
+      storage,
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Act
+    api.clearStorage()
+    const again = api.rehydrate()
+    first.resolve(persisted(1, 'stale'))
+    second.resolve(persisted(4, 'fresh'))
+    await again
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(reads).toBe(2)
+    expect(store.getState().test).toEqual({ value: 4, name: 'fresh' })
+  })
+
+  test('a rehydrate from the clear completion reads after removeItem', async () => {
+    // Arrange
+    const first = deferred<string | null>()
+    let deleted = false
+    let reads = 0
+    const storage: StateStorage = {
+      getItem: () => {
+        reads += 1
+        if (reads === 1) {
+          return first.promise
+        }
+        return Promise.resolve(deleted ? null : persisted(9, 'before-delete'))
+      },
+      setItem: async () => {},
+      removeItem: async () => {
+        deleted = true
+      },
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'clear-callback-rehydrate',
+      storage,
+    })
+    let restarted = false
+    api.onFinishHydration(() => {
+      if (restarted) {
+        return
+      }
+      restarted = true
+      void api.rehydrate()
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Act
+    api.clearStorage()
+    first.resolve(persisted(1, 'stale'))
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(deleted).toBe(true)
+    expect(store.getState().test).toEqual({ value: 0, name: 'initial' })
+  })
+
+  test('waits for a non-Promise setItem thenable before onSaveComplete', async () => {
+    // Arrange
+    let fulfill: () => void = () => {}
+    const writes: string[] = []
+    const onSaveComplete = vi.fn()
+    const storage: StateStorage = {
+      getItem: async () => null,
+      setItem: (_key, value) => {
+        writes.push(value)
+        return {
+          then(onFulfilled: () => void) {
+            fulfill = onFulfilled
+          },
+        } as unknown as Promise<void>
+      },
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer } = createStorageMiddleware({
+      rootReducer,
+      key: 'thenable-set',
+      storage,
+      onSaveComplete,
+      performance: { debounceMs: 0 },
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Act
+    store.dispatch(testSlice.actions.setName('saved'))
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(onSaveComplete).not.toHaveBeenCalled()
+    expect(JSON.parse(writes[0]).state.test.name).toBe('saved')
+
+    fulfill()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(onSaveComplete).toHaveBeenCalledTimes(1)
+  })
+
+  test('clearStorage drops a save scheduled from a sync onSaveComplete', async () => {
+    // Arrange
+    const writes: string[] = []
+    const storage: StateStorage = {
+      getItem: () => null,
+      setItem: (_key, value) => {
+        writes.push(value)
+      },
+      removeItem: () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'sync-reschedule',
+      storage,
+      performance: { debounceMs: 50 },
+      onSaveComplete: () => {
+        store.dispatch(testSlice.actions.setValue(2))
+      },
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+    await vi.advanceTimersByTimeAsync(0)
+    store.dispatch(testSlice.actions.setValue(1))
+
+    // Act
+    await vi.advanceTimersByTimeAsync(50)
+    api.clearStorage()
+    await vi.advanceTimersByTimeAsync(50)
+
+    // Assert — the follow-up dispatch must not be written after clear
+    expect(writes).toHaveLength(1)
+    expect(JSON.parse(writes[0]).state.test.value).toBe(1)
+  })
 })
 
 describe('createMMKVStorage', () => {
@@ -658,10 +880,12 @@ describe('createMMKVStorage', () => {
     // Act
     const missing = storage.getItem('absent')
     storage.setItem('theme', 'dark')
+    const stored = storage.getItem('theme')
     storage.removeItem('theme')
 
     // Assert
     expect(missing).toBeNull()
+    expect(stored).toBe('dark')
     expect(removed).toEqual(['theme'])
     expect(storage.getItem('theme')).toBeNull()
   })

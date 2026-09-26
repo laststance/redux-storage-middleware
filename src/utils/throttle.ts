@@ -55,9 +55,11 @@ export function throttle<Args extends unknown[]>(
         timeoutId = setTimeout(() => {
           lastCall = Date.now()
           timeoutId = null
-          if (lastArgs !== null) {
-            fn(...lastArgs)
-            lastArgs = null
+          const args = lastArgs
+          lastArgs = null
+          // Clear the pending args before fn so a sync reschedule is not wiped.
+          if (args !== null) {
+            fn(...args)
           }
         }, remaining)
       }
@@ -112,11 +114,13 @@ export function scheduleIdleCallback<Args extends unknown[]>(
     }
 
     idleId = requestIdle(() => {
-      if (pendingArgs !== null) {
-        fn(...pendingArgs)
-        pendingArgs = null
-      }
+      const args = pendingArgs
+      pendingArgs = null
       idleId = null
+      // Clear the handle before fn so a sync reschedule stays cancelable.
+      if (args !== null) {
+        fn(...args)
+      }
     }, options)
   }
 

@@ -619,7 +619,9 @@ export function createStorageMiddleware<
   // ---------------------------------------------------------------------------
 
   const api: HydrationApi<S> = {
-    rehydrate: async (): Promise<void> => {
+    // Not async: an async wrapper would return a new promise and hide the shared one.
+    // eslint-disable-next-line @typescript-eslint/promise-function-async -- async wraps a new promise, so in-flight callers would not share this one
+    rehydrate: (): Promise<void> => {
       // A second call waits for the read already in flight.
       if (hydrationState === 'hydrating' && inflightRehydrate) {
         return inflightRehydrate
@@ -632,6 +634,13 @@ export function createStorageMiddleware<
       const myGen = ++generation
       hydrationState = 'hydrating'
       hydrationSettled = false
+
+      let resolveTracked: () => void = () => {}
+      const tracked = new Promise<void>((resolve) => {
+        resolveTracked = resolve
+      })
+      // Publish before onHydrate so a nested rehydrate shares this read.
+      inflightRehydrate = tracked
 
       for (const callback of hydrateCallbacks) {
         callback(storeApi?.getState() as S)
@@ -658,12 +667,13 @@ export function createStorageMiddleware<
         },
       )
 
-      inflightRehydrate = run.finally(() => {
-        if (inflightRehydrate === run) {
+      void run.finally(() => {
+        if (inflightRehydrate === tracked) {
           inflightRehydrate = null
         }
+        resolveTracked()
       })
-      return inflightRehydrate
+      return tracked
     },
 
     hasHydrated: (): boolean => {
@@ -688,14 +698,8 @@ export function createStorageMiddleware<
       const wasHydrating = hydrationState === 'hydrating'
       generation += 1
 
-      // The in-flight getItem sees the new generation and must not hydrate.
-      // This call owns the terminal state for that aborted read.
-      if (wasHydrating) {
-        hydrationState = 'hydrated'
-        hydratedState = null
-        notifySettled(callbackState(null))
-      }
-
+      // Queue the delete before notifying. A finish callback that calls
+      // rehydrate must read after removeItem, not the pre-delete value.
       void enqueue(async () => {
         try {
           const removed = storage.removeItem(key)
@@ -719,6 +723,14 @@ export function createStorageMiddleware<
           onError?.(error as Error, 'clear')
         }
       })
+
+      // The in-flight getItem sees the new generation and must not hydrate.
+      // This call owns the terminal state for that aborted read.
+      if (wasHydrating) {
+        hydrationState = 'hydrated'
+        hydratedState = null
+        notifySettled(callbackState(null))
+      }
     },
 
     onHydrate: (callback: (state: S) => void): (() => void) => {

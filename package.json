@@ -2,7 +2,7 @@
   "name": "@laststance/redux-storage-middleware",
   "version": "0.4.0",
   "type": "module",
-  "description": "SSR-safe Redux middleware for LocalStorage persistence with hydration control",
+  "description": "SSR-safe Redux middleware that persists slices to localStorage, AsyncStorage, or MMKV, with hydration control",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -42,7 +42,11 @@
     "persistence",
     "ssr",
     "hydration",
-    "next.js"
+    "next.js",
+    "react-native",
+    "asyncstorage",
+    "mmkv",
+    "expo"
   ],
   "author": "Laststance.io",
   "license": "MIT",

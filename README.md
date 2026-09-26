@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-blue.svg)](https://www.typescriptlang.org/)
 
-SSR-safe Redux Toolkit middleware for localStorage persistence with selective slice hydration and performance optimization.
+SSR-safe Redux Toolkit middleware that persists slices to localStorage, AsyncStorage, or MMKV, with hydration control.
 
 ## Highlights
 
@@ -110,25 +110,25 @@ Creates the storage middleware and returns both the middleware and a control API
 
 #### Configuration Options
 
-| Option        | Type                                                    | Default                    | Description                                            |
-| ------------- | ------------------------------------------------------- | -------------------------- | ------------------------------------------------------ |
-| `rootReducer` | `Reducer<S, AnyAction>`                                 | **required**               | Root reducer to wrap with hydration                    |
-| `key`         | `string`                                                | **required**               | localStorage key                                       |
-| `slices`      | `(keyof S)[]`                                           | `undefined`                | State slices to persist (all if undefined)             |
-| `storage`     | `StateStorage`                                          | `createSafeLocalStorage()` | Sync or async backend. Custom storage ignores `window` |
-| `serializer`  | `Serializer`                                            | `defaultJsonSerializer`    | Custom serializer for state persistence                |
-| `version`     | `number`                                                | `0`                        | Schema version — increment when state shape changes    |
-| `migrate`     | `(state: Partial<S>, oldVersion: number) => Partial<S>` | `undefined`                | Migration function for version mismatches              |
-| `merge`       | `(persisted: Partial<S>, current: S) => S`              | shallow merge              | Custom merge strategy for hydration                    |
+| Option        | Type                                                    | Default                    | Description                                                                                  |
+| ------------- | ------------------------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| `rootReducer` | `Reducer<S, AnyAction>`                                 | **required**               | Root reducer to wrap with hydration                                                          |
+| `key`         | `string`                                                | **required**               | Storage key                                                                                  |
+| `slices`      | `(keyof S)[]`                                           | `undefined`                | Slices this middleware is the only writer for                                                |
+| `storage`     | `StateStorage`                                          | `createSafeLocalStorage()` | Sync or async backend. A custom instance skips the `window` check and can hydrate during SSR |
+| `serializer`  | `Serializer`                                            | `defaultJsonSerializer`    | Custom serializer for state persistence                                                      |
+| `version`     | `number`                                                | `0`                        | Schema version — increment when state shape changes                                          |
+| `migrate`     | `(state: Partial<S>, oldVersion: number) => Partial<S>` | `undefined`                | Migration function for version mismatches                                                    |
+| `merge`       | `(persisted: Partial<S>, current: S) => S`              | shallow merge              | Custom merge strategy for hydration                                                          |
 
 #### Performance Options
 
-| Option                        | Type      | Default     | Description                            |
-| ----------------------------- | --------- | ----------- | -------------------------------------- |
-| `performance.debounceMs`      | `number`  | `300`       | Debounce delay for saves               |
-| `performance.throttleMs`      | `number`  | `undefined` | Throttle interval (overrides debounce) |
-| `performance.useIdleCallback` | `boolean` | `false`     | Use `requestIdleCallback`              |
-| `performance.idleTimeout`     | `number`  | `1000`      | Fallback timeout for idle callback     |
+| Option                        | Type      | Default     | Description                                                              |
+| ----------------------------- | --------- | ----------- | ------------------------------------------------------------------------ |
+| `performance.debounceMs`      | `number`  | `300`       | Debounce delay for saves. A kill inside this window drops the last write |
+| `performance.throttleMs`      | `number`  | `undefined` | Throttle interval (overrides debounce)                                   |
+| `performance.useIdleCallback` | `boolean` | `false`     | Use `requestIdleCallback`                                                |
+| `performance.idleTimeout`     | `number`  | `1000`      | Fallback timeout for idle callback                                       |
 
 #### Lifecycle Callbacks
 
@@ -207,29 +207,56 @@ import {
 
 ### React Native
 
-This package does not depend on `react-native`, AsyncStorage, or MMKV. Pass a storage instance. Do not dispatch until `onFinishHydration`. A dispatch during the read is overwritten by the persisted state.
+This package does not depend on `react-native`, AsyncStorage, or MMKV. Install the backend in the app:
+
+```bash
+npx expo install @react-native-async-storage/async-storage
+# MMKV v4 only. v3 `delete` makes removeItem throw.
+npx expo install react-native-mmkv react-native-nitro-modules
+```
+
+AsyncStorage and `createMMKVStorage` have no init step. `initSuperJsonSerializer` and `initCompressedSerializer` apply only to those serializers. Omitting `storage` uses `createSafeLocalStorage()`, which no-ops when `window` is missing, including React Native. Do not use `isServer()` as the hydration gate.
+
+Hydration starts after the store is created. The AsyncStorage read is async. Render a loading state until `api.hasHydrated()` is true. `onFinishHydration` also runs when the read fails; check `api.getHydrationState() === 'hydrated'` before trusting restored state. A dispatch during the read is overwritten when persisted state is merged. Do not persist a slice that a database also owns.
 
 ```typescript
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { combineReducers, configureStore, createSlice } from '@reduxjs/toolkit'
 import { createMMKV } from 'react-native-mmkv'
 import {
   createMMKVStorage,
   createStorageMiddleware,
 } from '@laststance/redux-storage-middleware'
 
-// AsyncStorage needs no adapter
-createStorageMiddleware({
+const notesSlice = createSlice({
+  name: 'notes',
+  initialState: { items: [] as string[] },
+  reducers: {},
+})
+const rootReducer = combineReducers({ notes: notesSlice.reducer })
+
+const { middleware, reducer, api } = createStorageMiddleware({
   rootReducer,
-  key: 'app',
+  key: 'field-notes',
+  slices: ['notes'],
   storage: AsyncStorage,
 })
 
+export const store = configureStore({
+  reducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(middleware),
+})
+
+export const storageApi = api
+
 // MMKV v4: getString / set / remove. Missing keys become null.
-const storage = createMMKVStorage(createMMKV())
-createStorageMiddleware({
+const mmkv = createMMKVStorage(createMMKV())
+const mmkvPersistence = createStorageMiddleware({
   rootReducer,
-  key: 'app',
-  storage,
+  key: 'field-notes',
+  slices: ['notes'],
+  storage: mmkv,
 })
 ```
 
@@ -485,17 +512,18 @@ pnpm test:run       # Single run
 pnpm test:coverage  # With coverage
 ```
 
-**Coverage:** 160 tests with 80%+ coverage across 9 test files:
+**Coverage:** 188 tests with 80%+ coverage across 11 test files:
 
-| Category              | Tests | Coverage                             |
-| --------------------- | ----- | ------------------------------------ |
-| Core Middleware       | 29    | Initialization, hydration, callbacks |
-| Storage Layer         | 19    | localStorage, memory, async wrappers |
-| JSON Serializer       | 18    | Basic, enhanced, replacers/revivers  |
-| SuperJSON Serializer  | 16    | Async init, type handling, errors    |
-| Compressed Serializer | 19    | LZ-String, formats, compression      |
-| Utilities             | 24    | Debounce, throttle, SSR detection    |
-| Package Exports       | 14    | All public API validation            |
+| Category        | Tests | Coverage                                        |
+| --------------- | ----- | ----------------------------------------------- |
+| Core Middleware | 38    | Initialization, hydration, callbacks            |
+| React Native    | 22    | Thenable storage, MMKV adapter, clear/rehydrate |
+| Storage Layer   | 29    | localStorage, memory, async wrappers, no window |
+| JSON Serializer | 19    | Basic, enhanced, replacers/revivers             |
+| SuperJSON       | 8     | Async init, type handling, errors               |
+| Compressed      | 12    | LZ-String, formats, compression                 |
+| Utilities       | 28    | Debounce, throttle, idle, SSR detection         |
+| Package Exports | 32    | Public API validation                           |
 
 ### E2E Tests (Playwright)
 
@@ -557,6 +585,12 @@ const { middleware, reducer, api } = createStorageMiddleware<AppState>({
 cd examples/gmail-clone
 pnpm dev
 ```
+
+### Field Notes
+
+An Expo app that persists notes and theme through AsyncStorage. Playwright covers reload, delete, theme, and clear on the web export.
+
+**Location:** [`examples/field-notes`](https://github.com/laststance/redux-storage-middleware/tree/main/examples/field-notes)
 
 ---
 

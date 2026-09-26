@@ -172,8 +172,8 @@ export interface MmkvStorageLike {
  * storage backends in this package use `null`, so missing keys become `null`.
  *
  * Triggered only when application code calls it and passes the result as
- * `storage` to {@link createStorageMiddleware}. v3 `delete` is intentionally
- * ignored.
+ * `storage` to {@link createStorageMiddleware}. v3 instances use `delete`
+ * instead of `remove`, so {@link SyncStorage.removeItem} throws.
  *
  * @param mmkv - MMKV instance with `getString`, `set`, and `remove`
  * @returns Sync storage backed by that instance

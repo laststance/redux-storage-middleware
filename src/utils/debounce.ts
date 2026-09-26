@@ -31,8 +31,10 @@ export function debounce<Args extends unknown[]>(
     }
 
     timeoutId = setTimeout(() => {
-      fn(...args)
+      // Drop the id before fn. A sync callback can schedule the next timer,
+      // and clearing it afterwards would orphan that timer from cancel().
       timeoutId = null
+      fn(...args)
     }, ms)
   }
 

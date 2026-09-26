@@ -43,6 +43,26 @@ describe('debounce', () => {
     expect(fn).toHaveBeenCalledWith('arg3')
   })
 
+  test('cancel stops a timer that the running callback scheduled', async () => {
+    // Arrange
+    let calls = 0
+    const { debouncedFn, cancel } = debounce(() => {
+      calls += 1
+      if (calls === 1) {
+        debouncedFn()
+      }
+    }, 100)
+    debouncedFn()
+
+    // Act
+    await vi.advanceTimersByTimeAsync(100)
+    cancel()
+    await vi.advanceTimersByTimeAsync(100)
+
+    // Assert — the rescheduled save must not survive cancel
+    expect(calls).toBe(1)
+  })
+
   test('can cancel pending execution with cancel', async () => {
     const fn = vi.fn()
     const { debouncedFn, cancel } = debounce(fn, 100)
