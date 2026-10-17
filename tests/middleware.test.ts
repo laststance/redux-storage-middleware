@@ -1234,6 +1234,176 @@ describe('Storage Key Validation', () => {
     })
   })
 
+  describe('a save is skipped when the persisted slices did not change', () => {
+    beforeEach(() => {
+      localStorage.clear()
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    const notesSlice = createSlice({
+      name: 'notes',
+      initialState: { text: '' },
+      reducers: {
+        setText: (state, action: PayloadAction<string>) => {
+          state.text = action.payload
+        },
+      },
+    })
+
+    function savesFor(spy: { mock: { calls: unknown[][] } }, key: string) {
+      return spy.mock.calls.filter((call) => call[0] === key)
+    }
+
+    async function storeWith(options: {
+      key: string
+      debounceMs: number
+      slices?: Array<'settings' | 'notes'>
+    }) {
+      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
+      const rootReducer = combineReducers({
+        settings: settingsSlice.reducer,
+        notes: notesSlice.reducer,
+      })
+      const { middleware, reducer } = createStorageMiddleware({
+        rootReducer,
+        key: options.key,
+        slices: options.slices,
+        performance: { debounceMs: options.debounceMs },
+      })
+      const store = configureStore({
+        reducer,
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware().concat(middleware),
+      })
+      // Arrange: hydration may write; the assertions start after that
+      await vi.runAllTimersAsync()
+      setItemSpy.mockClear()
+      return { store, setItemSpy }
+    }
+
+    // protects=an unlisted slice does not write; fails_when=setItem runs for that key; no_claim=the bytes of a later listed write
+    test('an action that changes only an unlisted slice does not write', async () => {
+      // Arrange
+      const { store, setItemSpy } = await storeWith({
+        key: 'skip-unlisted',
+        debounceMs: 100,
+        slices: ['settings'],
+      })
+
+      // Act
+      store.dispatch(notesSlice.actions.setText('hello'))
+      await vi.advanceTimersByTimeAsync(100)
+
+      // Assert
+      expect(savesFor(setItemSpy, 'skip-unlisted')).toHaveLength(0)
+      expect(localStorage.getItem('skip-unlisted')).toBeNull()
+    })
+
+    // protects=a listed slice is stored; fails_when=the write is missing or the theme is still light; no_claim=other slices in the same store
+    test('an action that changes a listed slice writes that slice', async () => {
+      // Arrange
+      const { store, setItemSpy } = await storeWith({
+        key: 'skip-listed',
+        debounceMs: 100,
+        slices: ['settings'],
+      })
+
+      // Act
+      store.dispatch(settingsSlice.actions.setTheme('dark'))
+      await vi.advanceTimersByTimeAsync(100)
+
+      // Assert
+      expect(savesFor(setItemSpy, 'skip-listed')).toHaveLength(1)
+      const parsed = JSON.parse(
+        localStorage.getItem('skip-listed') ?? '{}',
+      ) as PersistedState
+      expect((parsed.state as { settings: SettingsState }).settings.theme).toBe(
+        'dark',
+      )
+    })
+
+    // protects=a pending listed write survives a later unlisted action; fails_when=the timer is cleared or the theme is not midnight; no_claim=how many times the unlisted reducer ran
+    test('an unlisted action during the debounce still writes the listed change', async () => {
+      // Arrange
+      const { store, setItemSpy } = await storeWith({
+        key: 'skip-pending',
+        debounceMs: 200,
+        slices: ['settings'],
+      })
+
+      // Act
+      store.dispatch(settingsSlice.actions.setTheme('midnight'))
+      store.dispatch(notesSlice.actions.setText('later'))
+      await vi.advanceTimersByTimeAsync(200)
+
+      // Assert
+      expect(savesFor(setItemSpy, 'skip-pending')).toHaveLength(1)
+      const parsed = JSON.parse(
+        localStorage.getItem('skip-pending') ?? '{}',
+      ) as PersistedState
+      expect((parsed.state as { settings: SettingsState }).settings.theme).toBe(
+        'midnight',
+      )
+    })
+
+    // protects=debounceMs 0 keeps the same skip; fails_when=the unlisted action writes or the listed action does not; no_claim=a non-zero debounce
+    test('debounce of zero still skips an unlisted slice and writes a listed one', async () => {
+      // Arrange
+      const { store, setItemSpy } = await storeWith({
+        key: 'skip-zero',
+        debounceMs: 0,
+        slices: ['settings'],
+      })
+
+      // Act
+      store.dispatch(notesSlice.actions.setText('nope'))
+      await vi.advanceTimersByTimeAsync(0)
+      const afterUnlisted = savesFor(setItemSpy, 'skip-zero').length
+      store.dispatch(settingsSlice.actions.setTheme('ocean'))
+      await vi.advanceTimersByTimeAsync(0)
+
+      // Assert
+      expect(afterUnlisted).toBe(0)
+      expect(savesFor(setItemSpy, 'skip-zero')).toHaveLength(1)
+      const parsed = JSON.parse(
+        localStorage.getItem('skip-zero') ?? '{}',
+      ) as PersistedState
+      expect((parsed.state as { settings: SettingsState }).settings.theme).toBe(
+        'ocean',
+      )
+    })
+
+    // protects=omitted slices still skip an action that returns the same state; fails_when=that action writes or a real change does not; no_claim=a configured slice list
+    test('with no slice list, an action that changes nothing does not write', async () => {
+      // Arrange
+      const { store, setItemSpy } = await storeWith({
+        key: 'skip-root',
+        debounceMs: 0,
+      })
+
+      // Act
+      store.dispatch({ type: 'notes/ignored' })
+      await vi.advanceTimersByTimeAsync(0)
+      const afterNoop = savesFor(setItemSpy, 'skip-root').length
+      store.dispatch(settingsSlice.actions.setTheme('rust'))
+      await vi.advanceTimersByTimeAsync(0)
+
+      // Assert
+      expect(afterNoop).toBe(0)
+      expect(savesFor(setItemSpy, 'skip-root')).toHaveLength(1)
+      const parsed = JSON.parse(
+        localStorage.getItem('skip-root') ?? '{}',
+      ) as PersistedState
+      expect((parsed.state as { settings: SettingsState }).settings.theme).toBe(
+        'rust',
+      )
+    })
+  })
+
   describe('loadStateFromStorage', () => {
     test('rejects empty keys', () => {
       expect(() => loadStateFromStorage('')).toThrow(
