@@ -282,6 +282,10 @@ export function createStorageMiddleware<
   let inflightRehydrate: Promise<void> | null = null
   let cancelScheduledSave: (() => void) | null = null
   let hydrationSettled = false
+  // Slice objects from the last state handed to saveHandler. Hydration sets
+  // this without scheduling a write. An action whose persisted slices are
+  // the same objects does not start the debounce again.
+  let lastPersistedRefs: unknown[] | null = null
 
   const enqueue = async <T>(job: () => T | PromiseLike<T>): Promise<T> => {
     const track = async (scheduled: Promise<T>): Promise<T> => {
@@ -331,6 +335,12 @@ export function createStorageMiddleware<
     }
     hydrationState = 'hydrated'
     hydratedState = next
+    // Empty storage finishes here and never dispatches HYDRATE_COMPLETE.
+    // Remember the slices already in the store so the next unrelated action
+    // does not write them again.
+    if (storeApi) {
+      lastPersistedRefs = persistedRefs(storeApi.getState())
+    }
     notifySettled(callbackState(next))
     return true
   }
@@ -350,6 +360,44 @@ export function createStorageMiddleware<
   // ---------------------------------------------------------------------------
   // Serialization
   // ---------------------------------------------------------------------------
+
+  /**
+   * The objects a later action is compared with.
+   *
+   * When `slices` is set, each entry is that slice. When it is not, the
+   * single entry is the whole state, because that is what gets stored.
+   * A reducer that changes a slice replaces the object, so `===` is enough.
+   * A reducer that mutates a slice and returns the same object is not seen.
+   * Called by the middleware before it schedules a save, and when hydration finishes.
+   *
+   * @param state - The store after the action.
+   * @returns One entry per persisted slice, or the root state when every slice is persisted.
+   */
+  const persistedRefs = (state: S): unknown[] => {
+    if (!slices || slices.length === 0) {
+      return [state]
+    }
+    return slices.map(
+      (sliceName) => (state as Record<string, unknown>)[sliceName],
+    )
+  }
+
+  /**
+   * Whether this action stored the same slice objects as the last scheduled save.
+   *
+   * @param left - Refs remembered at hydration or at the previous schedule. Null means nothing has been remembered yet.
+   * @param right - Refs of the state after this action.
+   * @returns True when every entry is the same object, so the save can be skipped.
+   */
+  const samePersistedRefs = (
+    left: unknown[] | null,
+    right: unknown[],
+  ): boolean => {
+    if (left === null || left.length !== right.length) {
+      return false
+    }
+    return left.every((value, index) => value === right[index])
+  }
 
   /**
    * Extracts state to save
@@ -783,6 +831,8 @@ export function createStorageMiddleware<
         if (action.type === ACTION_HYDRATE_COMPLETE) {
           hydrationState = 'hydrated'
           hydratedState = (action as unknown as { payload: S }).payload
+          // Remember the loaded slices. This action is not a user change.
+          lastPersistedRefs = persistedRefs(hydratedState)
           return result
         }
 
@@ -792,9 +842,14 @@ export function createStorageMiddleware<
         }
       }
 
-      // Save only after hydration is complete
+      // Save only after hydration, and only when a persisted slice is a new object.
       if (hydrationState === 'hydrated' && saveHandler) {
-        saveHandler(store.getState())
+        const nextState = store.getState()
+        const nextRefs = persistedRefs(nextState)
+        if (!samePersistedRefs(lastPersistedRefs, nextRefs)) {
+          lastPersistedRefs = nextRefs
+          saveHandler(nextState)
+        }
       }
 
       return result
