@@ -284,7 +284,8 @@ export function createStorageMiddleware<
   let hydrationSettled = false
   // Slice objects from the last state handed to saveHandler. Hydration sets
   // this without scheduling a write. An action whose persisted slices are
-  // the same objects does not start the debounce again.
+  // the same objects does not start the debounce again. A write that fails
+  // gives the marker back so the next action retries the save.
   let lastPersistedRefs: unknown[] | null = null
 
   const enqueue = async <T>(job: () => T | PromiseLike<T>): Promise<T> => {
@@ -400,6 +401,22 @@ export function createStorageMiddleware<
   }
 
   /**
+   * Gives back the dedup marker when a scheduled write does not land.
+   *
+   * The marker is consumed when the save is scheduled, before the write
+   * settles. A failed write must return it, or a later slice-unchanged
+   * action skips the retry and the write is lost. When a newer save was
+   * scheduled meanwhile the marker has already moved on and is left alone.
+   *
+   * @param state - The state whose write failed.
+   */
+  const releaseFailedSave = (state: S): void => {
+    if (samePersistedRefs(lastPersistedRefs, persistedRefs(state))) {
+      lastPersistedRefs = null
+    }
+  }
+
+  /**
    * Extracts state to save
    */
   const extractStateToSave = (state: S): Partial<S> => {
@@ -459,6 +476,7 @@ export function createStorageMiddleware<
                 '[redux-storage-middleware] Failed to save state:',
                 error,
               )
+              releaseFailedSave(state)
               onError?.(error as Error, 'save')
             },
           )
@@ -466,6 +484,7 @@ export function createStorageMiddleware<
         onSaveComplete?.(state)
       } catch (error) {
         console.error('[redux-storage-middleware] Failed to save state:', error)
+        releaseFailedSave(state)
         onError?.(error as Error, 'save')
       }
     })

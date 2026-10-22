@@ -21,7 +21,7 @@ import {
   deepMerge,
 } from '../src/storageMiddleware'
 import { createMemoryStorage } from '../src/storage'
-import type { PersistedState } from '../src/types'
+import type { PersistedState, StateStorage } from '../src/types'
 
 // Test Redux slice
 interface TestState {
@@ -1401,6 +1401,191 @@ describe('Storage Key Validation', () => {
       expect((parsed.state as { settings: SettingsState }).settings.theme).toBe(
         'rust',
       )
+    })
+  })
+
+  describe('a failed save is retried by a later action', () => {
+    beforeEach(() => {
+      localStorage.clear()
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+      vi.restoreAllMocks()
+    })
+
+    const notesSlice = createSlice({
+      name: 'notes',
+      initialState: { text: '' },
+      reducers: {
+        setText: (state, action: PayloadAction<string>) => {
+          state.text = action.payload
+        },
+      },
+    })
+
+    async function storeWith(options: {
+      key: string
+      debounceMs: number
+      storage: StateStorage
+      onError?: (error: Error, operation: 'load' | 'save' | 'clear') => void
+    }) {
+      const rootReducer = combineReducers({
+        settings: settingsSlice.reducer,
+        notes: notesSlice.reducer,
+      })
+      const { middleware, reducer } = createStorageMiddleware({
+        rootReducer,
+        key: options.key,
+        slices: ['settings'],
+        storage: options.storage,
+        onError: options.onError,
+        performance: { debounceMs: options.debounceMs },
+      })
+      const store = configureStore({
+        reducer,
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware().concat(middleware),
+      })
+      // Arrange: hydration may write; the assertions start after that
+      await vi.runAllTimersAsync()
+      return store
+    }
+
+    // protects=a sync setItem failure is retried on the next action; fails_when=the retry never runs or writes nothing; no_claim=a retry without a new action
+    test('a slice-unchanged action retries a save whose setItem threw', async () => {
+      // Arrange
+      const backing = createMemoryStorage()
+      const setItem = vi
+        .fn<(name: string, value: string) => void>()
+        .mockImplementationOnce(() => {
+          throw new Error('quota exceeded')
+        })
+        .mockImplementation((name, value) => backing.setItem(name, value))
+      const onError = vi.fn()
+      const storage: StateStorage = {
+        getItem: (name) => backing.getItem(name),
+        setItem,
+        removeItem: (name) => backing.removeItem(name),
+      }
+      const store = await storeWith({
+        key: 'retry-save',
+        debounceMs: 100,
+        storage,
+        onError,
+      })
+
+      // Act: the persisted slice changes, the write fails
+      store.dispatch(settingsSlice.actions.setTheme('dark'))
+      await vi.advanceTimersByTimeAsync(100)
+
+      // Assert: the failed write surfaced and nothing was stored
+      expect(setItem).toHaveBeenCalledTimes(1)
+      expect(backing.getItem('retry-save')).toBeNull()
+      expect(onError).toHaveBeenCalledWith(expect.any(Error), 'save')
+
+      // Act: an action that leaves the settings slice unchanged
+      store.dispatch(notesSlice.actions.setText('retry me'))
+      await vi.advanceTimersByTimeAsync(100)
+
+      // Assert: the save ran again and persisted the failed change
+      expect(setItem).toHaveBeenCalledTimes(2)
+      const parsed = JSON.parse(
+        backing.getItem('retry-save') ?? '{}',
+      ) as PersistedState
+      expect((parsed.state as { settings: SettingsState }).settings.theme).toBe(
+        'dark',
+      )
+
+      // Act: once the retry landed, unchanged actions do not write again
+      store.dispatch(notesSlice.actions.setText('again'))
+      await vi.advanceTimersByTimeAsync(100)
+      expect(setItem).toHaveBeenCalledTimes(2)
+    })
+
+    // protects=an async setItem rejection is retried on the next action; fails_when=the retry never runs or writes nothing; no_claim=a retry without a new action
+    test('a slice-unchanged action retries a save whose setItem rejected', async () => {
+      // Arrange
+      const backing = createMemoryStorage()
+      const setItem = vi
+        .fn<(name: string, value: string) => Promise<void>>()
+        .mockRejectedValueOnce(new Error('lock rejected'))
+        .mockImplementation(async (name, value) => {
+          backing.setItem(name, value)
+        })
+      const onError = vi.fn()
+      const storage: StateStorage = {
+        getItem: async (name) => backing.getItem(name),
+        setItem,
+        removeItem: async (name) => {
+          backing.removeItem(name)
+        },
+      }
+      const store = await storeWith({
+        key: 'retry-async',
+        debounceMs: 100,
+        storage,
+        onError,
+      })
+
+      // Act: the persisted slice changes, the write rejects
+      store.dispatch(settingsSlice.actions.setTheme('dark'))
+      await vi.advanceTimersByTimeAsync(100)
+
+      // Assert: the failed write surfaced and nothing was stored
+      expect(setItem).toHaveBeenCalledTimes(1)
+      expect(backing.getItem('retry-async')).toBeNull()
+      expect(onError).toHaveBeenCalledWith(expect.any(Error), 'save')
+
+      // Act: an action that leaves the settings slice unchanged
+      store.dispatch(notesSlice.actions.setText('retry me'))
+      await vi.advanceTimersByTimeAsync(100)
+
+      // Assert: the save ran again and persisted the failed change
+      expect(setItem).toHaveBeenCalledTimes(2)
+      const parsed = JSON.parse(
+        backing.getItem('retry-async') ?? '{}',
+      ) as PersistedState
+      expect((parsed.state as { settings: SettingsState }).settings.theme).toBe(
+        'dark',
+      )
+    })
+
+    // protects=a failed write does not cancel a newer scheduled save; fails_when=the newer write never runs; no_claim=the failed state being written again
+    test('a failed write keeps the dedup marker of a newer scheduled save', async () => {
+      // Arrange: every write fails
+      const backing = createMemoryStorage()
+      const setItem = vi
+        .fn<(name: string, value: string) => void>()
+        .mockImplementation(() => {
+          throw new Error('quota exceeded')
+        })
+      const storage: StateStorage = {
+        getItem: (name) => backing.getItem(name),
+        setItem,
+        removeItem: (name) => backing.removeItem(name),
+      }
+      const store = await storeWith({
+        key: 'retry-newer',
+        debounceMs: 100,
+        storage,
+      })
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      // Act: two changes land before the first debounce fires, then one more fails
+      store.dispatch(settingsSlice.actions.setTheme('dark'))
+      store.dispatch(settingsSlice.actions.setTheme('midnight'))
+      await vi.advanceTimersByTimeAsync(100)
+      expect(setItem).toHaveBeenCalledTimes(1)
+
+      // Act: retry via a slice-unchanged action also fails
+      store.dispatch(notesSlice.actions.setText('retry me'))
+      await vi.advanceTimersByTimeAsync(100)
+
+      // Assert: the retry ran once and the marker is not stuck consumed
+      expect(setItem).toHaveBeenCalledTimes(2)
+      consoleSpy.mockRestore()
     })
   })
 
