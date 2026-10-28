@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-10-28
+
+### Fixed
+
+- Several instances on one store no longer react to each other's `HYDRATE_COMPLETE`. Before, the first instance to finish hydrating also marked the others hydrated before their own reads finished, and reset their pending-save marker, which dropped a retry such as the 0.5.0 retry after a failed migration write-back. `HYDRATE_COMPLETE` now carries `meta.key`. An action without `meta` still counts for every instance.
+
 ## [0.5.0] - 2026-10-28
 
 ### Changed
