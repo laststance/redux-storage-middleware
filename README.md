@@ -386,13 +386,14 @@ const { middleware, reducer, api } = createStorageMiddleware<AppState>({
 
 **Behavior:**
 
-| Scenario                              | What happens                                      |
-| ------------------------------------- | ------------------------------------------------- |
-| Stored version matches config         | Normal hydration, no migration                    |
-| Version mismatch + `migrate` provided | Runs migration, saves migrated state to storage   |
-| Version mismatch + no `migrate`       | Clears storage (safe default), uses initial state |
-| Migration throws an error             | Clears storage, calls `onError` callback          |
-| Legacy data without version field     | Treated as version `0`                            |
+| Scenario                              | What happens                                                                           |
+| ------------------------------------- | -------------------------------------------------------------------------------------- |
+| Stored version matches config         | Normal hydration, no migration                                                         |
+| Version mismatch + `migrate` provided | Runs migration, saves migrated state to storage                                        |
+| Saving the migrated state fails       | Hydrates with it, calls `onError(error, 'save')`, retries the write on the next action |
+| Version mismatch + no `migrate`       | Clears storage (safe default), uses initial state                                      |
+| Migration throws an error             | Clears storage, calls `onError` callback                                               |
+| Legacy data without version field     | Treated as version `0`                                                                 |
 
 ### Custom Storage Backend
 

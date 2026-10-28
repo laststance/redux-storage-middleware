@@ -284,8 +284,9 @@ export function createStorageMiddleware<
   let hydrationSettled = false
   // Slice objects from the last state handed to saveHandler. Hydration sets
   // this without scheduling a write. An action whose persisted slices are
-  // the same objects does not start the debounce again. A write that fails
-  // gives the marker back so the next action retries the save.
+  // the same objects does not start the debounce again. A write that fails,
+  // including the write-back of migrated state, gives the marker back so the
+  // next action retries the save.
   let lastPersistedRefs: unknown[] | null = null
 
   const enqueue = async <T>(job: () => T | PromiseLike<T>): Promise<T> => {
@@ -490,7 +491,21 @@ export function createStorageMiddleware<
     })
   }
 
-  const commitMerge = (myGen: number, state: Partial<S>): void => {
+  /**
+   * Merges loaded state into the store and finishes hydration.
+   *
+   * Called after a matching read, and after a migration whether or not its
+   * write-back landed.
+   *
+   * @param myGen - Generation of the read. A clearStorage since then drops the merge.
+   * @param state - Persisted (or migrated) state to merge.
+   * @param retrySave - True when the loaded state is not in storage yet, so the next action must write it even if no persisted slice changes.
+   */
+  const commitMerge = (
+    myGen: number,
+    state: Partial<S>,
+    retrySave = false,
+  ): void => {
     if (myGen !== generation) {
       return
     }
@@ -503,6 +518,11 @@ export function createStorageMiddleware<
       })
     } else {
       hydratedState = state as S
+    }
+    // HYDRATE_COMPLETE marked the merged slices as saved. Undo that before the
+    // finish callbacks run, so an action they dispatch already retries.
+    if (retrySave) {
+      lastPersistedRefs = null
     }
     hydrationState = 'hydrated'
     notifySettled(callbackState(hydratedState))
@@ -531,6 +551,37 @@ export function createStorageMiddleware<
       }
     })
 
+  /**
+   * Keeps the migrated state when writing it back to storage fails.
+   *
+   * Storage still holds the old version, so the next launch migrates it
+   * again and nothing is lost. The migrated state is the user's data, so the
+   * store hydrates with it, and the next action retries the write. Failing
+   * hydration instead would run the session on initial state with every
+   * save turned off. Called by {@link writeMigrated} when `setItem` throws
+   * or rejects.
+   *
+   * @param myGen - Generation of the read. A clearStorage since then drops the merge.
+   * @param state - The migrated state whose write failed.
+   * @param error - The storage error, passed to `onError` as a `'save'` failure.
+   */
+  const keepMigratedAfterFailedWrite = (
+    myGen: number,
+    state: Partial<S>,
+    error: unknown,
+  ): void => {
+    if (myGen !== generation) {
+      return
+    }
+    console.error(
+      '[redux-storage-middleware] Failed to save migrated state:',
+      error,
+    )
+    commitMerge(myGen, state, true)
+    // After hydration, so a retry dispatched from onError schedules a save.
+    onError?.(error as Error, 'save')
+  }
+
   const writeMigrated = async (
     myGen: number,
     state: Partial<S>,
@@ -550,28 +601,26 @@ export function createStorageMiddleware<
       if (myGen !== generation) {
         return
       }
+      // Only a storage failure keeps the migrated state for a retry. A throw
+      // from the merge itself (a reducer or finish callback) must not merge again.
+      let written: ReturnType<typeof storage.setItem>
       try {
-        const written = storage.setItem(key, serialized)
-        if (isThenable(written)) {
-          return Promise.resolve(written).then(
-            () => {
-              commitMerge(myGen, state)
-            },
-            (error: unknown) => {
-              if (myGen !== generation) {
-                return
-              }
-              console.error(
-                '[redux-storage-middleware] Failed to save migrated state:',
-                error,
-              )
-              hydrationState = 'error'
-              hydratedState = null
-              onError?.(error as Error, 'save')
-              notifySettled(callbackState(null))
-            },
-          )
-        }
+        written = storage.setItem(key, serialized)
+      } catch (error) {
+        keepMigratedAfterFailedWrite(myGen, state, error)
+        return
+      }
+      if (isThenable(written)) {
+        return Promise.resolve(written).then(
+          () => {
+            commitMerge(myGen, state)
+          },
+          (error: unknown) => {
+            keepMigratedAfterFailedWrite(myGen, state, error)
+          },
+        )
+      }
+      try {
         commitMerge(myGen, state)
       } catch (error) {
         if (myGen !== generation) {
