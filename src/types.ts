@@ -365,6 +365,12 @@ export interface HydrateStartAction {
 export interface HydrateCompleteAction<T = unknown> {
   type: '@@redux-storage-middleware/HYDRATE_COMPLETE'
   payload: T
+  /**
+   * Storage key of the instance that finished hydrating. Another instance on
+   * the same store ignores it. An action without `meta` (dispatched by hand)
+   * counts for every instance.
+   */
+  meta?: { key: string }
 }
 
 /**

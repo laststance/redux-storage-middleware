@@ -624,6 +624,8 @@ import {
 
 > **Note:** The returned `reducer` from `createStorageMiddleware()` is already hydration-wrapped. No manual wrapper is needed.
 
+> **Several instances on one store:** give each its own `key` and `slices`, pass one instance's `reducer` as the next one's `rootReducer`, and concat every `middleware`. `HYDRATE_COMPLETE` carries `meta.key`, so each instance hydrates only from its own read.
+
 ---
 
 ## Contributing
