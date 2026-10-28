@@ -1089,3 +1089,132 @@ describe('createMMKVStorage', () => {
     expect(storage.getItem('theme')).toBeNull()
   })
 })
+
+describe('two storage instances on one store', () => {
+  interface NoteState {
+    text: string
+  }
+
+  const noteSlice = createSlice({
+    name: 'note',
+    initialState: { text: 'empty' } as NoteState,
+    reducers: {},
+  })
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  test('keeps an instance unhydrated while only the other instance on the store has finished', async () => {
+    // Arrange
+    const settingsRead = deferred<string | null>()
+    const settings = createStorageMiddleware({
+      rootReducer: combineReducers({
+        test: testSlice.reducer,
+        note: noteSlice.reducer,
+      }),
+      key: 'settings',
+      slices: ['test'],
+      storage: {
+        getItem: () => settingsRead.promise,
+        setItem: async () => {},
+        removeItem: async () => {},
+      },
+    })
+    const notes = createStorageMiddleware({
+      rootReducer: settings.reducer,
+      key: 'notes',
+      slices: ['note'],
+      storage: {
+        getItem: async () =>
+          JSON.stringify({ version: 0, state: { note: { text: 'saved' } } }),
+        setItem: async () => {},
+        removeItem: async () => {},
+      },
+    })
+    const store = configureStore({
+      reducer: notes.reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(settings.middleware, notes.middleware),
+    })
+
+    // Act: only the notes read has finished.
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert
+    expect(notes.api.hasHydrated()).toBe(true)
+    expect(store.getState().note.text).toBe('saved')
+    expect(settings.api.hasHydrated()).toBe(false)
+
+    settingsRead.resolve(persisted(4, 'stored'))
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(settings.api.hasHydrated()).toBe(true)
+    expect(store.getState().test).toEqual({ value: 4, name: 'stored' })
+  })
+
+  test('retries a failed migration write-back even after the other instance on the store finishes hydrating', async () => {
+    // Arrange
+    const written: string[] = []
+    let failNextWrite = true
+    const notesRead = deferred<string | null>()
+    const settings = createStorageMiddleware({
+      rootReducer: combineReducers({
+        test: testSlice.reducer,
+        note: noteSlice.reducer,
+      }),
+      key: 'settings',
+      slices: ['test'],
+      version: 1,
+      storage: {
+        getItem: () => persisted(2, 'original', 0),
+        setItem: (_key, value) => {
+          if (failNextWrite) {
+            failNextWrite = false
+            throw new Error('QuotaExceededError')
+          }
+          written.push(value)
+        },
+        removeItem: () => {},
+      },
+      migrate: (state) => ({
+        ...state,
+        test: { value: 2, name: 'migrated' },
+      }),
+      onError: () => {},
+    })
+    const notes = createStorageMiddleware({
+      rootReducer: settings.reducer,
+      key: 'notes',
+      slices: ['note'],
+      storage: {
+        getItem: () => notesRead.promise,
+        setItem: async () => {},
+        removeItem: async () => {},
+      },
+    })
+    const store = configureStore({
+      reducer: notes.reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(settings.middleware, notes.middleware),
+    })
+    await vi.advanceTimersByTimeAsync(0)
+    notesRead.resolve(
+      JSON.stringify({ version: 0, state: { note: { text: 'saved' } } }),
+    )
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Act: an action that leaves every persisted slice unchanged.
+    store.dispatch({ type: 'unrelated/ping' })
+    await vi.advanceTimersByTimeAsync(300)
+
+    // Assert
+    expect(written.map((value) => JSON.parse(value))).toEqual([
+      { version: 1, state: { test: { value: 2, name: 'migrated' } } },
+    ])
+  })
+})

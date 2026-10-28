@@ -515,6 +515,8 @@ export function createStorageMiddleware<
       storeApi.dispatch({
         type: ACTION_HYDRATE_COMPLETE,
         payload: hydratedState,
+        // Lets another instance on this store tell this hydration from its own.
+        meta: { key },
       })
     } else {
       hydratedState = state as S
@@ -897,6 +899,13 @@ export function createStorageMiddleware<
       ) {
         // Update internal state with HYDRATE_COMPLETE action
         if (action.type === ACTION_HYDRATE_COMPLETE) {
+          // Another instance on this store finished. Its read says nothing
+          // about this instance's storage, so it must neither mark this
+          // instance hydrated nor mark its slices as saved (which would drop
+          // a pending retry).
+          if (isOtherInstanceHydration(action, key)) {
+            return result
+          }
           hydrationState = 'hydrated'
           hydratedState = (action as unknown as { payload: S }).payload
           // Remember the loaded slices. This action is not a user change.
@@ -990,6 +999,31 @@ export function clearStorageState(storageKey: string): void {
   } catch (error) {
     console.error('[redux-storage-middleware] Failed to clear state:', error)
   }
+}
+
+/**
+ * Whether a HYDRATE_COMPLETE came from another instance on the same store.
+ *
+ * Several instances can share one store, each with its own key and slices.
+ * Every instance's middleware sees every HYDRATE_COMPLETE, so it must skip
+ * the ones another instance dispatched. An action without `meta.key`
+ * (dispatched by hand, or by a build before 0.5.1) counts as this instance's.
+ * Called by the middleware for each HYDRATE_COMPLETE.
+ *
+ * @internal
+ * @param action - A HYDRATE_COMPLETE action.
+ * @param key - This instance's storage key.
+ * @returns True when the action names a different storage key.
+ *
+ * @example
+ * ```ts
+ * isOtherInstanceHydration({ type: ACTION_HYDRATE_COMPLETE, meta: { key: 'notes' } }, 'settings') // => true
+ * isOtherInstanceHydration({ type: ACTION_HYDRATE_COMPLETE }, 'settings') // => false
+ * ```
+ */
+function isOtherInstanceHydration(action: object, key: string): boolean {
+  const meta = (action as { meta?: { key?: unknown } }).meta
+  return typeof meta?.key === 'string' && meta.key !== key
 }
 
 /**
