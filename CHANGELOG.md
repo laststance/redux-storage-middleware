@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-28
+
+### Changed
+
+- When writing migrated state back to storage fails, hydration now finishes with the migrated state instead of failing. `onError(error, 'save')` is still called, now after hydration, and the next action retries the write, even if it leaves the persisted slices unchanged. Before, hydration ended in `'error'`, the store kept its initial state, and no save ran for the rest of the session. Storage keeps the old version until a retry lands, so the next launch migrates it again. A serializer that throws on the migrated state still fails hydration.
+
 ## [0.4.2] - 2026-10-26
 
 ### Fixed
