@@ -5,11 +5,14 @@
  * getItem that finishes after clear or a newer read.
  */
 
-import type { PayloadAction } from '@reduxjs/toolkit'
+import type { Middleware, PayloadAction } from '@reduxjs/toolkit'
 import { combineReducers, configureStore, createSlice } from '@reduxjs/toolkit'
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 
-import { createStorageMiddleware } from '../src/storageMiddleware'
+import {
+  ACTION_HYDRATE_COMPLETE,
+  createStorageMiddleware,
+} from '../src/storageMiddleware'
 import { createMMKVStorage } from '../src/storage'
 import type { StateStorage } from '../src/types'
 
@@ -350,6 +353,105 @@ describe('async custom storage', () => {
     expect(written.map((value) => JSON.parse(value))).toEqual([
       { version: 1, state: { test: { value: 2, name: 'migrated' } } },
     ])
+  })
+
+  test('writes the migrated state when onError itself dispatches the retry', async () => {
+    // Arrange
+    const written: string[] = []
+    let failNextWrite = true
+    const storage: StateStorage = {
+      getItem: async () => persisted(2, 'original', 0),
+      setItem: async (_key, value) => {
+        if (failNextWrite) {
+          failNextWrite = false
+          throw new Error('disk full')
+        }
+        written.push(value)
+      },
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    let dispatchRetry: () => void = () => {}
+    const { middleware, reducer } = createStorageMiddleware({
+      rootReducer,
+      key: 'migrate-write-retry-from-on-error',
+      version: 1,
+      storage,
+      migrate: (state) => ({
+        ...state,
+        test: { value: 2, name: 'migrated' },
+      }),
+      onError: () => dispatchRetry(),
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+    dispatchRetry = () => store.dispatch({ type: 'storage/retry' })
+
+    // Act: no action besides the one onError dispatches.
+    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(300)
+
+    // Assert
+    expect(written.map((value) => JSON.parse(value))).toEqual([
+      { version: 1, state: { test: { value: 2, name: 'migrated' } } },
+    ])
+  })
+
+  test('merges the migrated state once when a finish callback throws after the write-back lands', async () => {
+    // Arrange
+    const storage: StateStorage = {
+      getItem: () => persisted(2, 'original', 0),
+      setItem: () => {},
+      removeItem: () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const onError = vi.fn()
+    let failFinish = true
+    const { middleware, reducer } = createStorageMiddleware({
+      rootReducer,
+      key: 'migrate-finish-throws',
+      version: 1,
+      storage,
+      migrate: (state) => ({
+        ...state,
+        test: { value: 2, name: 'migrated' },
+      }),
+      onError,
+      onHydrationComplete: () => {
+        if (failFinish) {
+          failFinish = false
+          throw new Error('callback failed')
+        }
+      },
+    })
+    const hydrateCompletes: string[] = []
+    const recordHydrateCompletes: Middleware = () => (next) => (action) => {
+      const { type } = action as { type: string }
+      if (type === ACTION_HYDRATE_COMPLETE) hydrateCompletes.push(type)
+      return next(action)
+    }
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware()
+          .concat(middleware)
+          .concat(recordHydrateCompletes),
+    })
+
+    // Act
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Assert: the callback error is reported once, not treated as a failed write to retry.
+    expect(hydrateCompletes).toHaveLength(1)
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'callback failed' }),
+      'save',
+    )
+    expect(store.getState().test).toEqual({ value: 2, name: 'migrated' })
   })
 
   test('writes the migrated state on the next action after its sync write-back threw', async () => {

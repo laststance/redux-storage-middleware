@@ -601,21 +601,39 @@ export function createStorageMiddleware<
       if (myGen !== generation) {
         return
       }
+      // Only a storage failure keeps the migrated state for a retry. A throw
+      // from the merge itself (a reducer or finish callback) must not merge again.
+      let written: ReturnType<typeof storage.setItem>
       try {
-        const written = storage.setItem(key, serialized)
-        if (isThenable(written)) {
-          return Promise.resolve(written).then(
-            () => {
-              commitMerge(myGen, state)
-            },
-            (error: unknown) => {
-              keepMigratedAfterFailedWrite(myGen, state, error)
-            },
-          )
-        }
-        commitMerge(myGen, state)
+        written = storage.setItem(key, serialized)
       } catch (error) {
         keepMigratedAfterFailedWrite(myGen, state, error)
+        return
+      }
+      if (isThenable(written)) {
+        return Promise.resolve(written).then(
+          () => {
+            commitMerge(myGen, state)
+          },
+          (error: unknown) => {
+            keepMigratedAfterFailedWrite(myGen, state, error)
+          },
+        )
+      }
+      try {
+        commitMerge(myGen, state)
+      } catch (error) {
+        if (myGen !== generation) {
+          return
+        }
+        console.error(
+          '[redux-storage-middleware] Failed to save migrated state:',
+          error,
+        )
+        hydrationState = 'error'
+        hydratedState = null
+        onError?.(error as Error, 'save')
+        notifySettled(callbackState(null))
       }
     })
   }
