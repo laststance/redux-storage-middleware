@@ -255,14 +255,16 @@ describe('async custom storage', () => {
     expect(writes).toEqual([])
   })
 
-  test('keeps the stored value when the migration write fails', async () => {
+  test('hydrates with the migrated state and keeps the stored value when the migration write rejects', async () => {
     // Arrange
     const onError = vi.fn()
     const onFinish = vi.fn()
     let removed = false
+    const writes: string[] = []
     const storage: StateStorage = {
       getItem: async () => persisted(2, 'original', 0),
-      setItem: async () => {
+      setItem: async (_key, value) => {
+        writes.push(value)
         throw new Error('disk full')
       },
       removeItem: async () => {
@@ -275,7 +277,10 @@ describe('async custom storage', () => {
       key: 'migrate-write-fail',
       version: 1,
       storage,
-      migrate: (state) => state,
+      migrate: (state) => ({
+        ...state,
+        test: { value: 2, name: 'migrated' },
+      }),
       onError,
       onHydrationComplete: onFinish,
     })
@@ -288,16 +293,108 @@ describe('async custom storage', () => {
     // Act
     await vi.advanceTimersByTimeAsync(0)
 
-    // Assert
-    expect(store.getState().test).toEqual({ value: 0, name: 'initial' })
-    expect(removed).toBe(false)
-    expect(api.getHydrationState()).toBe('error')
-    expect(api.hasHydrated()).toBe(false)
+    // Assert: the session runs on the user's migrated data, not initial state.
+    expect(store.getState().test).toEqual({ value: 2, name: 'migrated' })
+    expect(api.getHydrationState()).toBe('hydrated')
+    expect(api.hasHydrated()).toBe(true)
+    expect(onFinish).toHaveBeenCalledTimes(1)
+    expect(onError).toHaveBeenCalledTimes(1)
     expect(onError).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'disk full' }),
       'save',
     )
-    expect(onFinish).toHaveBeenCalledTimes(1)
+    // The old-version value stays in storage, so the next launch migrates it again.
+    expect(removed).toBe(false)
+    expect(writes).toHaveLength(1)
+  })
+
+  test('writes the migrated state on the next action after its async write-back was rejected', async () => {
+    // Arrange
+    const written: string[] = []
+    let failNextWrite = true
+    const storage: StateStorage = {
+      getItem: async () => persisted(2, 'original', 0),
+      setItem: async (_key, value) => {
+        if (failNextWrite) {
+          failNextWrite = false
+          throw new Error('disk full')
+        }
+        written.push(value)
+      },
+      removeItem: async () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer } = createStorageMiddleware({
+      rootReducer,
+      key: 'migrate-write-retry-async',
+      version: 1,
+      storage,
+      migrate: (state) => ({
+        ...state,
+        test: { value: 2, name: 'migrated' },
+      }),
+      onError: () => {},
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Act: an action that leaves every persisted slice unchanged.
+    store.dispatch({ type: 'unrelated/ping' })
+    await vi.advanceTimersByTimeAsync(300)
+
+    // Assert
+    expect(written.map((value) => JSON.parse(value))).toEqual([
+      { version: 1, state: { test: { value: 2, name: 'migrated' } } },
+    ])
+  })
+
+  test('writes the migrated state on the next action after its sync write-back threw', async () => {
+    // Arrange
+    const written: string[] = []
+    let failNextWrite = true
+    const storage: StateStorage = {
+      getItem: () => persisted(2, 'original', 0),
+      setItem: (_key, value) => {
+        if (failNextWrite) {
+          failNextWrite = false
+          throw new Error('QuotaExceededError')
+        }
+        written.push(value)
+      },
+      removeItem: () => {},
+    }
+    const rootReducer = combineReducers({ test: testSlice.reducer })
+    const { middleware, reducer, api } = createStorageMiddleware({
+      rootReducer,
+      key: 'migrate-write-retry-sync',
+      version: 1,
+      storage,
+      migrate: (state) => ({
+        ...state,
+        test: { value: 2, name: 'migrated' },
+      }),
+      onError: () => {},
+    })
+    const store = configureStore({
+      reducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(middleware),
+    })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(api.hasHydrated()).toBe(true)
+
+    // Act: an action that leaves every persisted slice unchanged.
+    store.dispatch({ type: 'unrelated/ping' })
+    await vi.advanceTimersByTimeAsync(300)
+
+    // Assert
+    expect(written.map((value) => JSON.parse(value))).toEqual([
+      { version: 1, state: { test: { value: 2, name: 'migrated' } } },
+    ])
   })
 
   test('notifies finish callbacks when storage is empty', async () => {
