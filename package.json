@@ -69,18 +69,19 @@
   "devDependencies": {
     "@laststance/npm-publish-tool": "^2.1.0",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "@vitest/browser-playwright": "^5.0.1",
-    "@vitest/coverage-v8": "^5.0.1",
-    "eslint": "^10.11.0",
+    "@vitest/browser-playwright": "^5.1.0",
+    "@vitest/coverage-v8": "^5.1.0",
+    "eslint": "^10.15.0",
     "eslint-config-ts-prefixer": "^5.1.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.5.1",
-    "playwright": "^1.63.0",
-    "prettier": "^3.9.9",
-    "release-it": "^21.1.0",
-    "tsup": "^8.5.1",
+    "lint-staged": "^17.6.1",
+    "playwright": "^1.65.1",
+    "prettier": "^3.10.1",
+    "release-it": "^21.1.2",
+    "tsup": "^9.0.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vitest": "^5.0.1"
+    "vitest": "^5.1.0",
+    "eslint-import-resolver-node": "^0.4.0"
   },
   "publishConfig": {
     "access": "public"

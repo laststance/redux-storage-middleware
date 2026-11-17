@@ -4,22 +4,22 @@
   "main": "index.ts",
   "dependencies": {
     "@laststance/redux-storage-middleware": "link:../..",
-    "@react-native-async-storage/async-storage": "^2.2.0",
-    "@reduxjs/toolkit": "^2.11.2",
-    "expo": "~57.0.25",
-    "expo-status-bar": "~57.0.1",
-    "react": "19.2.3",
-    "react-native": "0.86.3",
-    "react-redux": "^9.2.0"
+    "@react-native-async-storage/async-storage": "^3.1.1",
+    "@reduxjs/toolkit": "^2.14.0",
+    "expo": "~58.0.25",
+    "expo-status-bar": "~58.0.5",
+    "react": "19.3.1",
+    "react-native": "0.88.1",
+    "react-redux": "^9.3.1"
   },
   "devDependencies": {
-    "@expo/metro-runtime": "~57.0.0",
-    "@playwright/test": "^1.57.0",
-    "@types/react": "~19.2.2",
-    "react-dom": "19.2.3",
-    "react-native-web": "^0.21.0",
-    "serve": "^14.2.4",
-    "typescript": "~6.0.3"
+    "@expo/metro-runtime": "~58.0.17",
+    "@playwright/test": "^1.65.1",
+    "@types/react": "~19.3.0",
+    "react-dom": "19.3.1",
+    "react-native-web": "^0.21.4",
+    "serve": "^14.2.8",
+    "typescript": "~7.0.2"
   },
   "scripts": {
     "start": "expo start",
