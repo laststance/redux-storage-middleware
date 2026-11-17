@@ -1,7 +1,13 @@
 {
   "config": {
-    "configFile": "/Users/ryotamurakami/laststance/redux-strorage-middeware/examples/gmail-clone/playwright.config.ts",
-    "rootDir": "/Users/ryotamurakami/laststance/redux-strorage-middeware/examples/gmail-clone/tests/e2e",
+    "argv": [
+      "/Users/ryotamurakami/.vite-plus/js_runtime/node/24.22.1/bin/node",
+      "/Users/ryotamurakami/.codex/worktrees/laststance-deps-20261117/redux-storage-middleware/examples/gmail-clone/node_modules/.pnpm/@playwright+test@1.65.1/node_modules/@playwright/test/cli.js",
+      "test"
+    ],
+    "configFile": "/Users/ryotamurakami/.codex/worktrees/laststance-deps-20261117/redux-storage-middleware/examples/gmail-clone/playwright.config.ts",
+    "rootDir": "/Users/ryotamurakami/.codex/worktrees/laststance-deps-20261117/redux-storage-middleware/examples/gmail-clone/tests/e2e",
+    "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": true,
     "globalSetup": null,
@@ -14,6 +20,63 @@
       "actualWorkers": 8
     },
     "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/ryotamurakami/.codex/worktrees/laststance-deps-20261117/redux-storage-middleware/examples/gmail-clone/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/ryotamurakami/.codex/worktrees/laststance-deps-20261117/redux-storage-middleware/examples/gmail-clone/tests/e2e",
+        "testIgnore": [],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/ryotamurakami/.codex/worktrees/laststance-deps-20261117/redux-storage-middleware/examples/gmail-clone/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "name": "chromium",
+        "testDir": "/Users/ryotamurakami/.codex/worktrees/laststance-deps-20261117/redux-storage-middleware/examples/gmail-clone/tests/e2e",
+        "snapshotDir": "/Users/ryotamurakami/.codex/worktrees/laststance-deps-20261117/redux-storage-middleware/examples/gmail-clone/tests/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://localhost:3000",
+          "trace": "on-first-retry",
+          "screenshot": "only-on-failure",
+          "video": "retain-on-failure",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      }
+    ],
+    "quiet": false,
     "reporter": [
       [
         "html",
@@ -32,28 +95,11 @@
       "max": 5,
       "threshold": 300000
     },
-    "quiet": false,
-    "projects": [
-      {
-        "outputDir": "/Users/ryotamurakami/laststance/redux-strorage-middeware/examples/gmail-clone/test-results",
-        "repeatEach": 1,
-        "retries": 0,
-        "metadata": {
-          "actualWorkers": 8
-        },
-        "id": "chromium",
-        "name": "chromium",
-        "testDir": "/Users/ryotamurakami/laststance/redux-strorage-middeware/examples/gmail-clone/tests/e2e",
-        "testIgnore": [],
-        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
-        "timeout": 60000
-      }
-    ],
     "shard": null,
     "tags": [],
-    "updateSnapshots": "missing",
+    "updateSnapshots": "default",
     "updateSourceMethod": "patch",
-    "version": "1.57.0",
+    "version": "1.65.1",
     "workers": 8,
     "webServer": {
       "command": "pnpm start",
@@ -92,12 +138,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 929,
+                      "duration": 1121,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:19.940Z",
+                      "startTime": "2026-11-17T14:24:30.340Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -108,7 +154,7 @@
               "id": "9ac54e2c1d2cbd0b9fd7-71eeb6c8925199751ce2",
               "file": "cross-service-persistence.spec.ts",
               "line": 66,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should persist emails when navigating to Translate and back",
@@ -126,12 +172,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1837,
+                      "duration": 2048,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:19.937Z",
+                      "startTime": "2026-11-17T14:24:30.355Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -142,7 +188,7 @@
               "id": "9ac54e2c1d2cbd0b9fd7-f5c1b8934f531f895f6d",
               "file": "cross-service-persistence.spec.ts",
               "line": 92,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should persist 1000 emails across multiple service navigations",
@@ -160,12 +206,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 2852,
+                      "duration": 3128,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:19.938Z",
+                      "startTime": "2026-11-17T14:24:30.317Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -176,7 +222,7 @@
               "id": "9ac54e2c1d2cbd0b9fd7-53b0fff50c8f33c3986c",
               "file": "cross-service-persistence.spec.ts",
               "line": 132,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should persist state across browser context recreation (simulated browser restart)",
@@ -194,12 +240,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3477,
+                      "duration": 3712,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:19.943Z",
+                      "startTime": "2026-11-17T14:24:30.342Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -210,7 +256,7 @@
               "id": "9ac54e2c1d2cbd0b9fd7-4e273e8eee0d3aa8e336",
               "file": "cross-service-persistence.spec.ts",
               "line": 167,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should show correct count on service pages after email operations",
@@ -228,12 +274,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 2712,
+                      "duration": 2815,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:19.941Z",
+                      "startTime": "2026-11-17T14:24:30.311Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -244,7 +290,7 @@
               "id": "9ac54e2c1d2cbd0b9fd7-82228b8fde17f20f6d03",
               "file": "cross-service-persistence.spec.ts",
               "line": 230,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should handle clear all operation and reflect on service pages",
@@ -262,12 +308,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 2400,
+                      "duration": 2542,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:19.945Z",
+                      "startTime": "2026-11-17T14:24:30.396Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -278,7 +324,7 @@
               "id": "9ac54e2c1d2cbd0b9fd7-857ad623ccc608e4b808",
               "file": "cross-service-persistence.spec.ts",
               "line": 267,
-              "column": 7
+              "column": 3
             }
           ]
         },
@@ -304,12 +350,12 @@
                       "workerIndex": 6,
                       "parallelIndex": 6,
                       "status": "passed",
-                      "duration": 6838,
+                      "duration": 7301,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:19.937Z",
+                      "startTime": "2026-11-17T14:24:30.390Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -320,7 +366,7 @@
               "id": "9ac54e2c1d2cbd0b9fd7-1160ebd78cb23d09b564",
               "file": "cross-service-persistence.spec.ts",
               "line": 315,
-              "column": 7
+              "column": 3
             },
             {
               "title": "service pages should have working app launcher",
@@ -338,12 +384,12 @@
                       "workerIndex": 7,
                       "parallelIndex": 7,
                       "status": "passed",
-                      "duration": 2066,
+                      "duration": 2219,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:19.942Z",
+                      "startTime": "2026-11-17T14:24:30.389Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -354,7 +400,7 @@
               "id": "9ac54e2c1d2cbd0b9fd7-b373e7a5ae83ba0b48af",
               "file": "cross-service-persistence.spec.ts",
               "line": 358,
-              "column": 7
+              "column": 3
             }
           ]
         },
@@ -380,16 +426,16 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2572,
+                      "duration": 2735,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "\n[Performance] Cross-service navigation with 1000 emails:\n  Average navigation time: 318.50ms\n  Individual times: 327ms, 315ms, 317ms, 315ms\n    \n"
+                          "text": "\n[Performance] Cross-service navigation with 1000 emails:\n  Average navigation time: 312.75ms\n  Individual times: 324ms, 305ms, 304ms, 318ms\n    \n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:21.100Z",
+                      "startTime": "2026-11-17T14:24:31.763Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -400,7 +446,7 @@
               "id": "9ac54e2c1d2cbd0b9fd7-de59b217c4bef3ba2b38",
               "file": "cross-service-persistence.spec.ts",
               "line": 385,
-              "column": 7
+              "column": 3
             }
           ]
         }
@@ -435,12 +481,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 686,
+                      "duration": 796,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:22.001Z",
+                      "startTime": "2026-11-17T14:24:32.719Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -451,7 +497,7 @@
               "id": "827b0f012e130e7f74e1-01008a5a77ba24c49e1c",
               "file": "gmail-clone.spec.ts",
               "line": 70,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should display email generation buttons",
@@ -469,12 +515,12 @@
                       "workerIndex": 7,
                       "parallelIndex": 7,
                       "status": "passed",
-                      "duration": 677,
+                      "duration": 824,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:22.241Z",
+                      "startTime": "2026-11-17T14:24:32.895Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -485,7 +531,7 @@
               "id": "827b0f012e130e7f74e1-47af550d63ea7b63636d",
               "file": "gmail-clone.spec.ts",
               "line": 74,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should generate 100 emails and persist to localStorage",
@@ -503,12 +549,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 1241,
+                      "duration": 1339,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:22.553Z",
+                      "startTime": "2026-11-17T14:24:33.226Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -519,7 +565,7 @@
               "id": "827b0f012e130e7f74e1-f4d2985b97576d86d5c6",
               "file": "gmail-clone.spec.ts",
               "line": 80,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should clear all emails when Clear All is clicked",
@@ -534,15 +580,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 1727,
+                      "duration": 1907,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:22.693Z",
+                      "startTime": "2026-11-17T14:24:33.487Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -553,7 +599,7 @@
               "id": "827b0f012e130e7f74e1-5d7f1497b9b87d534c3b",
               "file": "gmail-clone.spec.ts",
               "line": 105,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should persist emails after page reload",
@@ -568,15 +614,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1763,
+                      "duration": 2052,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:22.883Z",
+                      "startTime": "2026-11-17T14:24:33.525Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -587,7 +633,7 @@
               "id": "827b0f012e130e7f74e1-29f5fa96905d764314a8",
               "file": "gmail-clone.spec.ts",
               "line": 125,
-              "column": 7
+              "column": 3
             }
           ]
         },
@@ -613,16 +659,16 @@
                       "workerIndex": 7,
                       "parallelIndex": 7,
                       "status": "passed",
-                      "duration": 1349,
+                      "duration": 1517,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[Performance] 1000 emails:\n      - Generation time: 676ms\n      - Storage size: 502.67KB\n    \n"
+                          "text": "[Performance] 1000 emails:\n      - Generation time: 705ms\n      - Storage size: 502.67KB\n    \n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:22.924Z",
+                      "startTime": "2026-11-17T14:24:33.724Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -633,7 +679,7 @@
               "id": "827b0f012e130e7f74e1-bf9b43e6612a8f22a22d",
               "file": "gmail-clone.spec.ts",
               "line": 151,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should persist 1000 emails after reload with fast hydration",
@@ -651,16 +697,16 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 1918,
+                      "duration": 2178,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[Performance] 1000 email hydration time: 567ms\n"
+                          "text": "[Performance] 1000 email hydration time: 577ms\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:23.025Z",
+                      "startTime": "2026-11-17T14:24:33.744Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -671,7 +717,7 @@
               "id": "827b0f012e130e7f74e1-c1dec3734e2aa4ce89db",
               "file": "gmail-clone.spec.ts",
               "line": 182,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should handle sequential email loads with persistence",
@@ -689,12 +735,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 1386,
+                      "duration": 1484,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:23.638Z",
+                      "startTime": "2026-11-17T14:24:34.362Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -705,7 +751,7 @@
               "id": "827b0f012e130e7f74e1-de1c445a9b9d14f05554",
               "file": "gmail-clone.spec.ts",
               "line": 206,
-              "column": 7
+              "column": 3
             }
           ]
         },
@@ -731,16 +777,16 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3537,
+                      "duration": 3609,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "\n╔══════════════════════════════════════════════════╗\n║     Gmail Clone Performance Report - 5000 Emails ║\n╠══════════════════════════════════════════════════╣\n║ Generation Time:    2184  ms                  ║\n║ Storage Size:       2.46  MB                  ║\n║ Hydration Time:     660   ms                  ║\n║ Emails per KB:      1.99                       ║\n╚══════════════════════════════════════════════════╝\n    \n"
+                          "text": "\n╔══════════════════════════════════════════════════╗\n║     Gmail Clone Performance Report - 5000 Emails ║\n╠══════════════════════════════════════════════════╣\n║ Generation Time:    2225  ms                  ║\n║ Storage Size:       2.46  MB                  ║\n║ Hydration Time:     648   ms                  ║\n║ Emails per KB:      1.99                       ║\n╚══════════════════════════════════════════════════╝\n    \n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:23.679Z",
+                      "startTime": "2026-11-17T14:24:34.510Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -751,7 +797,7 @@
               "id": "827b0f012e130e7f74e1-f2a228eaec9cb97bfd51",
               "file": "gmail-clone.spec.ts",
               "line": 235,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should demonstrate debounce optimization",
@@ -769,16 +815,16 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 1361,
+                      "duration": 1535,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[Debounce Test] 5 rapid clicks completed in 694ms\n"
+                          "text": "[Debounce Test] 5 rapid clicks completed in 810ms\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:23.799Z",
+                      "startTime": "2026-11-17T14:24:34.573Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -789,7 +835,7 @@
               "id": "827b0f012e130e7f74e1-ec9c3f15274b763af8f6",
               "file": "gmail-clone.spec.ts",
               "line": 284,
-              "column": 7
+              "column": 3
             }
           ]
         },
@@ -815,12 +861,12 @@
                       "workerIndex": 7,
                       "parallelIndex": 7,
                       "status": "passed",
-                      "duration": 1853,
+                      "duration": 1958,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:24.278Z",
+                      "startTime": "2026-11-17T14:24:35.247Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -831,7 +877,7 @@
               "id": "827b0f012e130e7f74e1-ff5e61cd1c946269cf32",
               "file": "gmail-clone.spec.ts",
               "line": 320,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should restore complex state after browser restart",
@@ -846,19 +892,19 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 2224,
+                      "duration": 2276,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[Browser Restart] 1000 emails restored in 568ms after browser restart\n"
+                          "text": "[Browser Restart] 1000 emails restored in 566ms after browser restart\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:24.425Z",
+                      "startTime": "2026-11-17T14:24:35.400Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -869,7 +915,7 @@
               "id": "827b0f012e130e7f74e1-57cc7b3cad59266339f6",
               "file": "gmail-clone.spec.ts",
               "line": 415,
-              "column": 7
+              "column": 3
             }
           ]
         },
@@ -892,15 +938,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1716,
+                      "duration": 1783,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:24.651Z",
+                      "startTime": "2026-11-17T14:24:35.584Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -911,7 +957,7 @@
               "id": "827b0f012e130e7f74e1-64a74970d18134cb7acf",
               "file": "gmail-clone.spec.ts",
               "line": 514,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should search emails",
@@ -926,15 +972,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 2005,
+                      "duration": 2097,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:24.948Z",
+                      "startTime": "2026-11-17T14:24:35.856Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -945,7 +991,7 @@
               "id": "827b0f012e130e7f74e1-c4dd724a84cf8832eebc",
               "file": "gmail-clone.spec.ts",
               "line": 521,
-              "column": 7
+              "column": 3
             },
             {
               "title": "should display hydration status",
@@ -960,15 +1006,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 1724,
+                      "duration": 1855,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-02T13:59:25.029Z",
+                      "startTime": "2026-11-17T14:24:35.934Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -979,7 +1025,7 @@
               "id": "827b0f012e130e7f74e1-fbdd65d931f51fea2d7c",
               "file": "gmail-clone.spec.ts",
               "line": 533,
-              "column": 7
+              "column": 3
             }
           ]
         }
@@ -988,8 +1034,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-02T13:59:18.995Z",
-    "duration": 8248.453,
+    "startTime": "2026-11-17T14:24:29.558Z",
+    "duration": 8593.422,
     "expected": 24,
     "skipped": 0,
     "unexpected": 0,
